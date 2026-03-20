@@ -25,8 +25,6 @@ An interactive and modular web application built using **Flask** for performing 
 ## 🗂️ Project Structure
 
 ```
-Text_Analysis_Dashboard/
-│
 ├── .vscode/
 ├── static/
 │   ├── css/
