@@ -1,4 +1,4 @@
-# \TextFlow (No Code NLP Platform)
+# TextFlow (No Code NLP Platform)
 
 An interactive and modular web application built using **Flask** for performing comprehensive **text analysis** on labeled datasets. The dashboard supports core Natural Language Processing (NLP) tasks such as frequency analysis, word clouds, sentiment scoring, keyword extraction, and predictive modeling.
 
