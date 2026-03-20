@@ -55,8 +55,8 @@ An interactive and modular web application built using **Flask** for performing 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/AdnanAbdelkarim/Text_Analysis_Dashboard.git
-cd Text_Analysis_Dashboard
+git clone https://github.com/AdnanAbdelkarim/TextFlow-No-Code-NLP-Platform.git
+cd TextFlow-No-Code-NLP-Platform
 ```
 
 ### 2. Set up and activate a Python 3.11 virtual environment
