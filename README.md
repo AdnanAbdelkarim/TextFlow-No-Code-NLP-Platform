@@ -1,28 +1,28 @@
-# 🧠 Text Analysis Dashboard
+# \TextFlow (No Code NLP Platform)
 
 An interactive and modular web application built using **Flask** for performing comprehensive **text analysis** on labeled datasets. The dashboard supports core Natural Language Processing (NLP) tasks such as frequency analysis, word clouds, sentiment scoring, keyword extraction, and predictive modeling.
 
-> 👨‍🔬 This project was developed as part of an academic research initiative under the supervision of **Dr. Uzair Ahmed**, with implementation and development led by **Adnan Abdelkarim** as a **Research Assistant**. It is currently under consideration for **publication** and potential **productization**.
+> This project was developed as part of an academic research initiative under the supervision of **Dr. Uzair Ahmed**, with implementation and development led by **Adnan Abdelkarim** as a **Research Assistant**. It is currently under consideration for **publication** and potential **productization**.
 
 
 ---
 
-## 🚀 Features
+## Features
 
-- 📂 Upload `.csv` or `.txt` files with labeled text data  
-- 📊 Word frequency, Zipf's Law plot, and word co-occurrence network  
-- 🔍 Named Entity Recognition (NER)  
-- ☁️ Word cloud generation with stopword removal  
-- 📈 Sentiment analysis using AFINN  
-- 🧠 Predictive modeling using Naive Bayes, Logistic Regression, and KNN  
-- 📉 Confusion matrix, classification report, and ROC curve visualization  
-- 🧪 Type I and Type II error breakdown (binary classification only)  
-- 💡 TF-IDF vectorization support *(available for Logistic Regression and KNN models only)*
-- 🛠️ Modular Flask backend and clearly separated utilities  
+- Upload `.csv` or `.txt` files with labeled text data  
+- Word frequency, Zipf's Law plot, and word co-occurrence network  
+- Named Entity Recognition (NER)  
+- Word cloud generation with stopword removal  
+- Sentiment analysis using AFINN  
+- Predictive modeling using Naive Bayes, Logistic Regression, and KNN  
+- Confusion matrix, classification report, and ROC curve visualization  
+- Type I and Type II error breakdown (binary classification only)  
+- TF-IDF vectorization support *(available for Logistic Regression and KNN models only)*
+- Modular Flask backend and clearly separated utilities  
 
 ---
 
-## 🗂️ Project Structure
+## Project Structure
 
 ```
 ├── .vscode/
@@ -50,7 +50,7 @@ An interactive and modular web application built using **Flask** for performing 
 
 ---
 
-## ⚙️ Setup Instructions
+## Setup Instructions
 
 ### 1. Clone the repository
 
@@ -82,7 +82,7 @@ python main.py
 
 ---
 
-## 📦 Requirements
+## Requirements
 
 ```
 Flask>=2.2,<3.0
@@ -100,7 +100,7 @@ afinn>=0.1
 
 ---
 
-## 📚 Academic Context & Research Value
+## Academic Context & Research Value
 
 This project is part of an independent academic research initiative collaboratively developed by:
 
@@ -111,13 +111,13 @@ It aims to demonstrate practical, scalable NLP capabilities through a modular te
 
 ---
 
-## 📜 License & Attribution
+## License & Attribution
 
 **Authors:** Adnan Abdelkarim and Dr. Uzair Ahmed  
 This project is part of an academic research collaboration. If you reference or build upon this work, please cite the forthcoming publication when available.
 
 ---
 
-## 🙌 Acknowledgements
+## Acknowledgements
 
 Special thanks to **Dr. Uzair Ahmed** for his supervision, guidance, and continuous support throughout the development of this project.
