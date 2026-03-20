@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Text Analysis - Input</title>
+  <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}"> -->
+  <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/tabs.css') }}"> -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/all.css') }}"> 
+
+</head>
+
+<body>
+  <div class="sticky-header">
+    <div class="tabs">
+      <a href="{{ url_for('index') }}" class="tab-button {% if request.endpoint == 'index' %}active{% endif %}">Input</a>
+      <a href="{{ url_for('overview') }}" class="tab-button {% if request.endpoint == 'overview' %}active{% endif %}">Overview</a>
+      <a href="{{ url_for('visualizations') }}" class="tab-button {% if request.endpoint == 'visualizations' %}active{% endif %}">Visualizations</a>
+      <a href="{{ url_for('advanced') }}" class="tab-button {% if request.endpoint == 'advanced' %}active{% endif %}">Advanced Analysis</a>
+      <a href="{{ url_for('preprocessing') }}" class="tab-button {% if request.endpoint == 'preprocessing' %}active{% endif %}">Pre-Processing</a>
+      <a href="{{ url_for('predictive') }}" class="tab-button {% if request.endpoint == 'predictive' %}active{% endif %}" style="display: none;" id="predictiveTab">Predictive Modelling</a>
+    </div>
+  </div>
+
+  <!-- Input section (Paste + Upload side by side) -->
+  <div class="input-wrapper">
+    <div class="input-left">
+      <label class="section-label"><span>Paste your text here:</span></label>
+      <div class="info-box">
+        <strong>Note:</strong> Maximum allowed input is 1,000,000 words.
+      </div>      
+      <textarea id="textInput" placeholder="Paste your text here..."></textarea>
+      <p id="liveWordCount" class="word-counter">Words: 0 / 1,000,000</p>
+    </div>
+
+    <div class="input-right">
+      <label class="section-label"><span>Upload text file:</span></label>
+      <div class="info-box">
+        <strong>Note:</strong> Accepted formats are .txt, .docx, .PDF — Max size: 10 MB.
+      </div>      
+      <div class="upload-box">
+        <input type="file" id="fileInput" accept=".txt,.docx,.pdf,.csv,.xlsx">
+        <p class="file-note">Accepted formats: .txt, .docx, .pdf, .csv, .xlsx</p>
+      </div>
+    </div>
+    
+    <div class="input-right">
+      <label class="section-label"><span>Or enter a URL:</span></label>
+      <input type="text" id="urlInput" placeholder="https://raw.-----.------.txt" style="width: 80%;">
+      <button onclick="fetchURLText()">Analyze URL</button>
+    </div>
+    
+  </div>
+
+  <!-- Analyze button -->
+  <div class="analyze-button-wrapper">
+    <button id="analyzeButton">Analyze</button>
+    <div id="loadingSpinner" class="spinner hidden">Analyzing...</div>
+  </div>
+
+  
+  <!-- External libs (deferred, in order) -->
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script defer src="https://unpkg.com/mammoth@1.6.0/mammoth.browser.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/docx-preview@0.3.6/dist/docx-preview.min.js"></script>
+  
+  <!-- Configure PDF.js worker AFTER libs are ready -->
+  <script>
+    window.addEventListener('DOMContentLoaded', function () {
+      if (window.pdfjsLib) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js";
+      }
+    });
+    
+  </script>
+  
+  <!-- Your app code LAST so it sees the libs -->
+  <script defer src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+
+
+  
+</body>
+
+</html>

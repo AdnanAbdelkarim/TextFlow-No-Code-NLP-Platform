@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pre-Processing</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/all.css') }}"> 
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+  <div class="sticky-header">
+    <div class="tabs">
+      <a href="{{ url_for('index') }}" class="tab-button {% if request.endpoint == 'index' %}active{% endif %}">Input</a>
+      <a href="{{ url_for('overview') }}" class="tab-button {% if request.endpoint == 'overview' %}active{% endif %}">Overview</a>
+      <a href="{{ url_for('visualizations') }}" class="tab-button {% if request.endpoint == 'visualizations' %}active{% endif %}">Visualizations</a>
+      <a href="{{ url_for('advanced') }}" class="tab-button {% if request.endpoint == 'advanced' %}active{% endif %}">Advanced Analysis</a>
+      <a href="{{ url_for('preprocessing') }}" class="tab-button {% if request.endpoint == 'preprocessing' %}active{% endif %}">Pre-Processing</a>
+      <a href="{{ url_for('predictive') }}" class="tab-button {% if request.endpoint == 'predictive' %}active{% endif %}">Predictive Modelling</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <h2>Text Pre-Processing Pipeline</h2>
+    
+    <div class="preprocessing-controls">
+      <!-- Text Normalization Section -->
+      
+
+      <!-- Feature Extraction Section -->
+      <div class="control-section">
+        <h3>Feature Extraction</h3>
+        <div class="checkbox-group">
+          <label class="checkbox-wrapper">
+            <input type="checkbox" id="useTF" name="feature">
+            <span class="checkmark"></span>
+            Term Frequency (TF)
+          </label>
+          <label class="checkbox-wrapper">
+            <input type="checkbox" id="useTFIDF" name="feature">
+            <span class="checkmark"></span>
+            TF-IDF
+          </label>
+          <label class="checkbox-wrapper">
+            <input type="checkbox" id="useWord2Vec" name="feature">
+            <span class="checkmark"></span>
+            Word2Vec
+          </label>
+        </div>
+        <div class="info-text">Note: Only one feature extraction method can be used at a time</div>
+      </div>
+
+      <div class="control-section" id="normalizationSection">
+        <h3>Text Normalization</h3>
+        <div class="info-text" id="normalizationDisabledMessage" style="color: #999; font-style: italic;">
+            Available only for TF and TF-IDF feature extraction methods
+        </div>
+        <div class="checkbox-group" id="normalizationCheckboxes" style="display: none;">
+            <label class="checkbox-wrapper">
+                <input type="checkbox" id="useStemming" name="normalization">
+                <span class="checkmark"></span>
+                Apply Stemming
+            </label>
+            <label class="checkbox-wrapper">
+                <input type="checkbox" id="useLemmatization" name="normalization">
+                <span class="checkmark"></span>
+                Apply Lemmatization
+            </label>
+        </div>
+        <div class="info-text" id="normalizationNote" style="display: none;">
+            Note: Stemming and Lemmatization cannot be used together
+        </div>
+    </div>
+
+      <!-- Class Imbalance Section -->
+      <div class="control-section">
+        <h3>Class Imbalance Handling</h3>
+        <div class="checkbox-group">
+          <label class="checkbox-wrapper">
+            <input type="checkbox" id="useSMOTE" name="imbalance">
+            <span class="checkmark"></span>
+            SMOTE (Synthetic Minority Over-sampling)
+          </label>
+          <label class="checkbox-wrapper">
+            <input type="checkbox" id="useOversampling" name="imbalance">
+            <span class="checkmark"></span>
+            Random Oversampling
+          </label>
+          <label class="checkbox-wrapper">
+            <input type="checkbox" id="useUndersampling" name="imbalance">
+            <span class="checkmark"></span>
+            Random Undersampling
+          </label>
+        </div>
+        <div class="info-text">Note: Only one class imbalance method can be applied at a time</div>
+      </div>
+
+      <!-- Vectorization Section -->
+      <div class="control-section">
+        <h3>Vectorization</h3>
+        <div class="vector-controls">
+          <label for="vectorSize">Vector Size (% of vocabulary):</label>
+          <input type="range" id="vectorSize" min="10" max="100" value="100" class="vector-slider">
+          <span id="vectorSizeValue">100%</span>
+          <div class="vector-info">
+            <span id="vocabSize">Vocabulary size: calculating...</span>
+            <span id="actualVectorSize">Actual vector size: -</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button id="preprocessBtn" class="styled-button primary">Apply Pre-Processing</button>
+        <button id="resetBtn" class="styled-button secondary">🔄 Reset</button>
+      </div>
+
+      <!-- Results Display -->
+      <div id="preprocessingResults" class="results-section" style="display: none;">
+        <h3>Pre-Processing Results</h3>
+        <div class="results-grid">
+          <div class="result-card">
+            <h4>Original Text Sample</h4>
+            <div id="originalText" class="text-sample"></div>
+          </div>
+          <div class="result-card">
+            <h4>Processed Text Sample</h4>
+            <div id="processedText" class="text-sample"></div>
+          </div>
+          <div class="result-card">
+            <h4>Vector Information</h4>
+            <div id="vectorInfo" class="vector-stats"></div>
+          </div>
+        </div>
+        <div class="proceed-section">
+          <button id="proceedToModeling" class="styled-button success">➡️ Proceed to Predictive Modeling</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/preprocessing.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,972 @@
+// preprocessing.js
+class TextPreprocessor {
+    constructor() {
+        this.vocabulary = new Set();
+        this.processedData = null;
+        this.vectorizer = null;
+        this.currentSettings = {};
+    }
+
+    // Load data from session storage
+    loadData() {
+        try {
+            const csvText = sessionStorage.getItem("uploadedCSV");
+            if (!csvText) {
+                throw new Error("No data found in session storage");
+            }
+
+            return new Promise((resolve, reject) => {
+                Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        if (results.errors.length > 0) {
+                            reject(new Error("CSV parsing error: " + results.errors[0].message));
+                            return;
+                        }
+                        
+                        const data = results.data || [];
+                        const textCol = sessionStorage.getItem("detectedTextCol");
+                        const labelCol = sessionStorage.getItem("detectedLabelCol");
+                        
+                        if (!textCol || !labelCol || !data.length) {
+                            reject(new Error("Could not detect text and label columns"));
+                            return;
+                        }
+
+                        const processed = data.map(row => ({
+                            text: row[textCol]?.toString().trim(),
+                            label: row[labelCol]?.toString().trim(),
+                            originalText: row[textCol]?.toString().trim()
+                        })).filter(row => row.text && row.label);
+                        
+                        resolve(processed);
+                    },
+                    error: function(error) {
+                        reject(error);
+                    }
+                });
+            });
+        } catch (error) {
+            console.error("Error loading data:", error);
+            throw error;
+        }
+    }
+
+    // Text normalization
+    normalizeText(text, useStemming = false, useLemmatization = false) {
+        if (useStemming && useLemmatization) {
+            throw new Error("Cannot use both stemming and lemmatization");
+        }
+
+        // Convert to lowercase and remove extra whitespace
+        let processed = text.toLowerCase().replace(/\s+/g, ' ').trim();
+        
+        // Remove punctuation and special characters (keep basic punctuation for context)
+        processed = processed.replace(/[^\w\s.!?]/g, '');
+        
+        // Tokenize
+        const tokens = processed.split(/\s+/);
+        
+        if (useStemming) {
+            return tokens.map(token => this.stem(token)).join(' ');
+        } else if (useLemmatization) {
+            return tokens.map(token => this.lemmatize(token)).join(' ');
+        }
+        
+        return tokens.join(' ');
+    }
+
+    // Simple stemmer (Porter stemmer simplified)
+    stem(token) {
+        // Basic stemming rules
+        if (token.length < 3) return token;
+        
+        const rules = [
+            [/(ss|i)es$/, '$1'],
+            [/([^aeiou])s$/, '$1'],
+            [/(eed)$/, 'ee'],
+            [/(ed|ing)$/, ''],
+            [/y$/, 'i']
+        ];
+        
+        let stemmed = token;
+        for (const [pattern, replacement] of rules) {
+            if (pattern.test(stemmed)) {
+                stemmed = stemmed.replace(pattern, replacement);
+                break;
+            }
+        }
+        
+        return stemmed;
+    }
+
+    // Simple lemmatizer (basic dictionary-based)
+    lemmatize(token) {
+        const lemmatizationDict = {
+            'running': 'run', 'ran': 'run', 'runs': 'run',
+            'jumping': 'jump', 'jumped': 'jump', 'jumps': 'jump',
+            'walking': 'walk', 'walked': 'walk', 'walks': 'walk',
+            'better': 'good', 'best': 'good',
+            'worse': 'bad', 'worst': 'bad',
+            'is': 'be', 'are': 'be', 'were': 'be', 'was': 'be',
+            'has': 'have', 'had': 'have',
+            'does': 'do', 'did': 'do',
+            'going': 'go', 'went': 'go', 'gone': 'go'
+        };
+        
+        return lemmatizationDict[token] || token;
+    }
+
+    // Build vocabulary from processed texts
+    buildVocabulary(texts) {
+        this.vocabulary.clear();
+        texts.forEach(text => {
+            const tokens = text.split(/\s+/);
+            tokens.forEach(token => {
+                if (token.length > 1) { // Ignore single characters
+                    this.vocabulary.add(token);
+                }
+            });
+        });
+        return this.vocabulary;
+    }
+
+    // Vectorize texts based on selected method
+    vectorizeTexts(texts, useTF = false, useTFIDF = false, useWord2Vec = false, vectorSizePercent = 100) {
+        if (!useTF && !useTFIDF && !useWord2Vec) {
+            throw new Error("Please select at least one feature extraction method");
+        }
+        
+        // Word2Vec processing will be done on backend
+        if (useWord2Vec) {
+            console.log("Word2Vec selected - will be processed on backend");
+            // Return placeholder vectors for frontend display
+            return texts.map(() => ({
+                'word2vec': 'Backend processing required'
+            }));
+        }
+        
+        const vocabArray = Array.from(this.vocabulary);
+        const actualVectorSize = Math.ceil(vocabArray.length * (vectorSizePercent / 100));
+        const selectedVocab = vocabArray.slice(0, actualVectorSize);
+        
+        if (useTFIDF) {
+            return this.calculateTFIDF(texts, selectedVocab);
+        } else if (useTF) {
+            return this.calculateTF(texts, selectedVocab);
+        }
+    }
+
+    // Calculate Term Frequency
+    calculateTF(texts, vocabulary) {
+        return texts.map(text => {
+            const tokens = text.split(/\s+/);
+            const vector = {};
+            let totalWords = tokens.length;
+            
+            vocabulary.forEach(word => {
+                const count = tokens.filter(token => token === word).length;
+                vector[word] = count / totalWords;
+            });
+            
+            return vector;
+        });
+    }
+
+    // Calculate TF-IDF
+    calculateTFIDF(texts, vocabulary) {
+        // Calculate TF
+        const tfVectors = texts.map(text => {
+            const tokens = text.split(/\s+/);
+            const vector = {};
+            let totalWords = tokens.length;
+            
+            vocabulary.forEach(word => {
+                const count = tokens.filter(token => token === word).length;
+                vector[word] = count / totalWords;
+            });
+            
+            return vector;
+        });
+
+        // Calculate IDF
+        const idf = {};
+        vocabulary.forEach(word => {
+            const docsWithWord = tfVectors.filter(vector => vector[word] > 0).length;
+            idf[word] = Math.log(texts.length / (1 + docsWithWord));
+        });
+
+        // Calculate TF-IDF
+        return tfVectors.map(tfVector => {
+            const tfidfVector = {};
+            vocabulary.forEach(word => {
+                tfidfVector[word] = tfVector[word] * idf[word];
+            });
+            return tfidfVector;
+        });
+    }
+
+    // Main preprocessing function
+    async preprocess(settings) {
+        try {
+            const rawData = await this.loadData();
+            this.currentSettings = settings;
+    
+            const { useStemming, useLemmatization, useTF, useTFIDF, useWord2Vec, vectorSize, 
+                    useSMOTE, useOversampling, useUndersampling } = settings;
+    
+            // If Word2Vec is selected, call backend for complete processing
+            if (useWord2Vec) {
+                console.log("Word2Vec selected - calling backend for processing");
+                
+                const response = await fetch('/api/preprocess_preview', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        settings: settings,
+                        rows: rawData,
+                        textCol: 'text'
+                    })
+                });
+    
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || error.error || 'Preprocessing failed');
+                }
+    
+                const backendResults = await response.json();
+                
+                // Format results for display
+                this.processedData = {
+                    original: rawData,
+                    processed: rawData.map((item, idx) => ({
+                        ...item,
+                        processedText: backendResults.processed_sample || item.text
+                    })),
+                    vectors: [], // Backend handles vectors
+                    vocabulary: {
+                        size: backendResults.vocab_size,
+                        actualVectorSize: backendResults.vector_dimensions
+                    },
+                    settings: settings,
+                    classDistribution: {
+                        original: backendResults.original_class_distribution,
+                        processed: backendResults.processed_class_distribution
+                    }
+                };
+                
+                return this.processedData;
+            }
+    
+            // For TF/TF-IDF, continue with client-side processing
+            // Normalize texts
+            const processedTexts = rawData.map(item => ({
+                ...item,
+                processedText: this.normalizeText(item.text, useStemming, useLemmatization)
+            }));
+    
+            // Build vocabulary
+            const texts = processedTexts.map(item => item.processedText);
+            this.buildVocabulary(texts);
+    
+            // Vectorize
+            const vectors = this.vectorizeTexts(texts, useTF, useTFIDF, useWord2Vec, vectorSize);
+    
+            // Apply class imbalance handling (client-side)
+            let finalData = processedTexts;
+            let finalVectors = vectors;
+            
+            if (useSMOTE || useOversampling || useUndersampling) {
+                const balanced = this.applyClassBalancing(
+                    processedTexts, 
+                    vectors, 
+                    { useSMOTE, useOversampling, useUndersampling }
+                );
+                finalData = balanced.data;
+                finalVectors = balanced.vectors;
+            }
+    
+            this.processedData = {
+                original: rawData,
+                processed: finalData,
+                vectors: finalVectors,
+                vocabulary: {
+                    size: this.vocabulary.size,
+                    actualVectorSize: Math.ceil(this.vocabulary.size * (vectorSize / 100))
+                },
+                settings: settings
+            };
+    
+            return this.processedData;
+    
+        } catch (error) {
+            console.error("Preprocessing error:", error);
+            throw error;
+        }
+    }
+    
+    // Add this new method for client-side class balancing
+    applyClassBalancing(data, vectors, settings) {
+        const { useSMOTE, useOversampling, useUndersampling } = settings;
+        
+        // Group by class
+        const classCounts = {};
+        data.forEach(item => {
+            const label = item.label || 'Unlabeled';
+            classCounts[label] = (classCounts[label] || 0) + 1;
+        });
+        
+        const maxCount = Math.max(...Object.values(classCounts));
+        const minCount = Math.min(...Object.values(classCounts));
+        
+        let balancedData = [];
+        let balancedVectors = [];
+        
+        if (useOversampling || useSMOTE) {
+            // Oversample minority classes to match majority
+            Object.keys(classCounts).forEach(className => {
+                const classItems = data.filter(item => (item.label || 'Unlabeled') === className);
+                const classVectors = vectors.filter((_, idx) => (data[idx].label || 'Unlabeled') === className);
+                
+                balancedData.push(...classItems);
+                balancedVectors.push(...classVectors);
+                
+                const needed = maxCount - classItems.length;
+                for (let i = 0; i < needed; i++) {
+                    const randomIdx = Math.floor(Math.random() * classItems.length);
+                    balancedData.push({...classItems[randomIdx]});
+                    balancedVectors.push({...classVectors[randomIdx]});
+                }
+            });
+        } else if (useUndersampling) {
+            // Undersample majority classes to match minority
+            Object.keys(classCounts).forEach(className => {
+                const classItems = data.filter(item => (item.label || 'Unlabeled') === className);
+                const classVectors = vectors.filter((_, idx) => (data[idx].label || 'Unlabeled') === className);
+                
+                // Randomly sample minCount items
+                const shuffled = classItems.map((item, idx) => ({ item, vector: classVectors[idx] }))
+                                           .sort(() => 0.5 - Math.random());
+                
+                for (let i = 0; i < Math.min(minCount, shuffled.length); i++) {
+                    balancedData.push(shuffled[i].item);
+                    balancedVectors.push(shuffled[i].vector);
+                }
+            });
+        }
+        
+        return { data: balancedData, vectors: balancedVectors };
+    }
+
+    // Store processed data for predictive modeling
+    storeForModeling() {
+        if (!this.processedData) {
+          throw new Error("No processed data available");
+        }
+      
+        // Store only essential information to avoid quota issues
+        const essentialInfo = {
+          settings: this.currentSettings,
+          vocabulary: {
+            size: this.vocabulary.size,
+            actualVectorSize: this.processedData.vocabulary.actualVectorSize
+          },
+          documentCount: this.processedData.processed.length,
+          sample: this.processedData.processed.slice(0, 3) // Store only a small sample
+        };
+      
+        try {
+          sessionStorage.setItem("preprocessingSettings", JSON.stringify(essentialInfo.settings));
+          sessionStorage.setItem("preprocessingInfo", JSON.stringify({
+            vocabularySize: essentialInfo.vocabulary.size,
+            vectorSize: essentialInfo.vocabulary.actualVectorSize,
+            methods: this.getMethodsString(essentialInfo.settings),
+            documentCount: essentialInfo.documentCount
+          }));
+          
+          // Don't store the entire processed data - it's too large
+          // The actual processing will be done on the server side
+          
+          return true;
+        } catch (error) {
+          console.warn("Could not store all preprocessing info:", error);
+          
+          // Store minimal info
+          sessionStorage.setItem("preprocessingApplied", "true");
+          sessionStorage.setItem("preprocessingSettings", JSON.stringify(this.currentSettings));
+          
+          return true;
+        }
+      }
+}
+
+function toggleTextNormalizationSection(featureMethodId) {
+    // Find the text normalization section
+    const normalizationSections = document.querySelectorAll('.control-section');
+    let normalizationSection = null;
+    
+    normalizationSections.forEach(section => {
+        const heading = section.querySelector('h3');
+        if (heading && heading.textContent.includes('Text Normalization')) {
+            normalizationSection = section;
+        }
+    });
+    
+    if (!normalizationSection) return;
+    
+    // Show only for TF and TF-IDF, hide for Word2Vec
+    if (featureMethodId === 'useWord2Vec') {
+        normalizationSection.style.display = 'none';
+        // Uncheck any normalization options when hidden
+        document.getElementById('useStemming').checked = false;
+        document.getElementById('useLemmatization').checked = false;
+    } else {
+        normalizationSection.style.display = 'block';
+    }
+}
+// Add this BEFORE the PreprocessingUI class definition
+function updateVectorSizeInput(featureMethodId) {
+    // Handle normalization section visibility
+    const normalizationCheckboxes = document.getElementById('normalizationCheckboxes');
+    const normalizationDisabledMessage = document.getElementById('normalizationDisabledMessage');
+    const normalizationNote = document.getElementById('normalizationNote');
+    
+    // Check if any feature is actually selected
+    const isTFSelected = document.getElementById('useTF').checked;
+    const isTFIDFSelected = document.getElementById('useTFIDF').checked;
+    const isWord2VecSelected = document.getElementById('useWord2Vec').checked;
+    
+    const vectorSlider = document.getElementById('vectorSize');
+    const vectorValue = document.getElementById('vectorSizeValue');
+    const vectorContainer = vectorSlider ? vectorSlider.parentElement : null;
+    
+    // Check current state - is it already Word2Vec slider or TF/TF-IDF slider?
+    const currentMax = vectorSlider ? parseInt(vectorSlider.max) : 100;
+    const isCurrentlyWord2Vec = currentMax === 200;
+    
+    // If nothing is selected, show only title
+    if (!isTFSelected && !isTFIDFSelected && !isWord2VecSelected) {
+        normalizationCheckboxes.style.display = 'none';
+        normalizationNote.style.display = 'none';
+        normalizationDisabledMessage.style.display = 'block';
+        document.getElementById('useStemming').checked = false;
+        document.getElementById('useLemmatization').checked = false;
+        
+        const vocabInfo = document.querySelector('.vector-info');
+        if (vocabInfo) vocabInfo.style.display = 'block';
+        
+        const vectorLabel = document.querySelector('label[for="vectorSize"]');
+        if (vectorLabel) vectorLabel.style.display = 'block';
+        
+        // FIXED: Changed condition to isCurrentlyWord2Vec
+        if (vectorContainer && isCurrentlyWord2Vec) {
+            vectorSlider.min = "10";
+            vectorSlider.max = "100";
+            vectorSlider.value = "100";
+            vectorValue.textContent = "100%";
+            
+            // Remove old event listener by cloning the slider
+            const newSlider = vectorSlider.cloneNode(true);
+            vectorSlider.parentNode.replaceChild(newSlider, vectorSlider);
+            
+            // Add new event listener for percentage
+            const ui = window.preprocessingUI;
+            document.getElementById('vectorSize').addEventListener('input', function(e) {
+                document.getElementById('vectorSizeValue').textContent = `${e.target.value}%`;
+                if (ui) ui.updateVectorInfo();
+            });
+        }
+        return;
+    }
+    
+    if (isWord2VecSelected) {
+        // Word2Vec: Hide normalization options
+        normalizationCheckboxes.style.display = 'none';
+        normalizationNote.style.display = 'none';
+        normalizationDisabledMessage.style.display = 'block';
+        document.getElementById('useStemming').checked = false;
+        document.getElementById('useLemmatization').checked = false;
+        
+        const vocabInfo = document.querySelector('.vector-info');
+        if (vocabInfo) vocabInfo.style.display = 'none';
+        
+        const vectorLabel = document.querySelector('label[for="vectorSize"]');
+        if (vectorLabel) vectorLabel.style.display = 'none';
+        
+        // Only update slider if not already Word2Vec slider
+        if (vectorContainer && !isCurrentlyWord2Vec) {
+            vectorSlider.min = "10";
+            vectorSlider.max = "200";
+            vectorSlider.value = "100";
+            vectorValue.textContent = "100 dimensions";
+            
+            // Remove old event listener by cloning the slider
+            const newSlider = vectorSlider.cloneNode(true);
+            vectorSlider.parentNode.replaceChild(newSlider, vectorSlider);
+            
+            // FIXED: Removed duplicate event listener
+            // Add new event listener for dimensions
+            const ui = window.preprocessingUI;
+            document.getElementById('vectorSize').addEventListener('input', function(e) {
+                document.getElementById('vectorSizeValue').textContent = `${e.target.value} dimensions`;
+                if (ui) ui.updateVectorInfo();
+            });
+        }
+    } else if (isTFSelected || isTFIDFSelected) {
+        normalizationCheckboxes.style.display = 'block';
+        normalizationNote.style.display = 'block';
+        normalizationDisabledMessage.style.display = 'none';
+        
+        // ALWAYS show vocabulary info and label for TF/TF-IDF
+        const vocabInfo = document.querySelector('.vector-info');
+        if (vocabInfo) vocabInfo.style.display = 'block';
+        
+        const vectorLabel = document.querySelector('label[for="vectorSize"]');
+        if (vectorLabel) vectorLabel.style.display = 'block';
+        
+        // Only update slider if currently Word2Vec slider
+        if (vectorContainer && isCurrentlyWord2Vec) {
+            vectorSlider.min = "10";
+            vectorSlider.max = "100";
+            vectorSlider.value = "100";
+            vectorValue.textContent = "100%";
+            
+            // Remove old event listener by cloning the slider
+            const newSlider = vectorSlider.cloneNode(true);
+            vectorSlider.parentNode.replaceChild(newSlider, vectorSlider);
+            
+            // Add new event listener for percentage
+            const ui = window.preprocessingUI;
+            document.getElementById('vectorSize').addEventListener('input', function(e) {
+                document.getElementById('vectorSizeValue').textContent = `${e.target.value}%`;
+                if (ui) ui.updateVectorInfo();
+            });
+            if (ui) ui.updateVectorInfo();
+        }
+    }
+}
+
+
+// UI Controller
+class PreprocessingUI {
+    constructor() {
+        this.preprocessor = new TextPreprocessor();
+        this.initializeEventListeners();
+        this.loadVocabularyInfo();
+        this.initializeNormalizationVisibility();
+    }
+    initializeNormalizationVisibility() {
+        // Check which feature is initially selected (if any)
+        const featureCheckboxes = document.querySelectorAll('input[name="feature"]');
+        let selectedFeature = null;
+        
+        featureCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                selectedFeature = checkbox.id;
+            }
+        });
+        
+        // If Word2Vec is selected on load, hide normalization section
+        if (selectedFeature === 'useWord2Vec') {
+            toggleTextNormalizationSection('useWord2Vec');
+        }
+    }
+
+    initializeEventListeners() {
+        // Normalization checkboxes (mutually exclusive)
+        const normalizationCheckboxes = document.querySelectorAll('input[name="normalization"]');
+        normalizationCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    normalizationCheckboxes.forEach(other => {
+                        if (other !== this) other.checked = false;
+                    });
+                }
+            });
+        });
+    
+        // Feature extraction checkboxes (mutually exclusive)
+        const featureCheckboxes = document.querySelectorAll('input[name="feature"]');
+        featureCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    featureCheckboxes.forEach(other => {
+                        if (other !== this) other.checked = false;
+                    });
+                    updateVectorSizeInput(this.id);
+                    toggleTextNormalizationSection(this.id);
+                } else {
+                    updateVectorSizeInput(null);
+                }
+
+            });
+        });
+
+
+    
+        // Class imbalance checkboxes (mutually exclusive)
+        const imbalanceCheckboxes = document.querySelectorAll('input[name="imbalance"]');
+        imbalanceCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    imbalanceCheckboxes.forEach(other => {
+                        if (other !== this) other.checked = false;
+                    });
+                }
+            });
+        });
+    
+        // Vector size slider
+        const vectorSlider = document.getElementById('vectorSize');
+        const vectorValue = document.getElementById('vectorSizeValue');
+        vectorSlider.addEventListener('input', (e) => {
+            vectorValue.textContent = `${e.target.value}%`;
+            this.updateVectorInfo();
+        });
+    
+        // Preprocess button
+        document.getElementById('preprocessBtn').addEventListener('click', () => {
+            this.runPreprocessing();
+        });
+    
+        // Reset button
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            this.resetForm();
+        });
+    
+        // Proceed to modeling button
+        document.getElementById('proceedToModeling').addEventListener('click', () => {
+            this.proceedToModeling();
+        });
+    }
+
+    async loadVocabularyInfo() {
+        try {
+            const data = await this.preprocessor.loadData();
+            const texts = data.map(item => item.text);
+            const vocab = this.preprocessor.buildVocabulary(texts);
+            
+            document.getElementById('vocabSize').textContent = `Vocabulary size: ${vocab.size}`;
+            this.updateVectorInfo();
+        } catch (error) {
+            console.error("Error loading vocabulary info:", error);
+            document.getElementById('vocabSize').textContent = 'Vocabulary size: Error loading data';
+        }
+    }
+
+    updateVectorInfo() {
+        const vectorSlider = document.getElementById('vectorSize');
+        const vectorSize = parseInt(vectorSlider.value);
+        const vocabSize = this.preprocessor.vocabulary.size;
+        
+        // Check if Word2Vec is selected
+        const isWord2VecSelected = document.getElementById('useWord2Vec').checked;
+        
+        if (isWord2VecSelected) {
+            // For Word2Vec, vectorSize is the actual dimensions, not a percentage
+            document.getElementById('actualVectorSize').textContent = 
+                `Actual vector size: ${vectorSize} dimensions`;
+        } else {
+            // For TF/TF-IDF, vectorSize is a percentage of vocabulary
+            const actualSize = Math.floor(vocabSize * (vectorSize / 100));
+            document.getElementById('actualVectorSize').textContent = 
+                `Actual vector size: ${actualSize}`;
+        }
+    }
+
+    async runPreprocessing() {
+        const preprocessBtn = document.getElementById('preprocessBtn');
+        const originalBtnText = preprocessBtn.textContent;
+        try {
+            preprocessBtn.disabled = true;
+            preprocessBtn.textContent = "⏳ Processing...";
+            
+            const settings = {
+                useStemming: document.getElementById('useStemming').checked,
+                useLemmatization: document.getElementById('useLemmatization').checked,
+                useTF: document.getElementById('useTF').checked,
+                useTFIDF: document.getElementById('useTFIDF').checked,
+                useWord2Vec: document.getElementById('useWord2Vec').checked,
+                vectorSize: parseInt(document.getElementById('vectorSize').value),
+                useSMOTE: document.getElementById('useSMOTE').checked,
+                useOversampling: document.getElementById('useOversampling').checked,
+                useUndersampling: document.getElementById('useUndersampling').checked
+            };
+            
+            // Validate settings
+            if (settings.useStemming && settings.useLemmatization) {
+                throw new Error("Please select either Stemming OR Lemmatization, not both");
+            }
+            
+            // Validate feature extraction - only one method
+            const featureSelected = [
+                settings.useTF,
+                settings.useTFIDF,
+                settings.useWord2Vec
+            ].filter(Boolean);
+            
+            if (featureSelected.length === 0) {
+                throw new Error("Please select at least one feature extraction method");
+            }
+            
+            if (featureSelected.length > 1) {
+                throw new Error("Please select ONLY ONE feature extraction method. You currently have " + featureSelected.length + " selected.");
+            }
+            
+            // Validate class imbalance - only one method at a time
+            const imbalanceSelected = [
+                settings.useSMOTE, 
+                settings.useOversampling, 
+                settings.useUndersampling
+            ].filter(Boolean);
+            
+            if (imbalanceSelected.length > 1) {
+                throw new Error("Please select ONLY ONE class imbalance method. You currently have " + imbalanceSelected.length + " selected.");
+            }
+            
+            const results = await this.preprocessor.preprocess(settings);
+            this.displayResults(results);
+            
+        } catch (error) {
+            this.showError(error.message);
+        } finally {
+            preprocessBtn.disabled = false;
+            preprocessBtn.textContent = originalBtnText;
+        }
+    }
+
+    displayResults(results) {
+        const resultsSection = document.getElementById('preprocessingResults');
+        const originalText = document.getElementById('originalText');
+        const processedText = document.getElementById('processedText');
+        const vectorInfo = document.getElementById('vectorInfo');
+        
+        // Show original and processed text samples
+        if (results.processed.length > 0) {
+            const sample = results.processed[0];
+            originalText.textContent = sample.originalText || sample.text || "No sample available";
+            processedText.textContent = sample.processedText || "No sample available";
+        }
+        
+        // Calculate class distributions
+        const classDistributionHTML = this.getClassDistributionHTML(results);
+        
+        // Check if Word2Vec is being used
+        const isWord2Vec = results.settings.useWord2Vec;
+        const vectorSizeNote = isWord2Vec ? ' (Word2Vec dimensions)' : '';
+        
+        // Show vector information
+        vectorInfo.innerHTML = `
+            <div class="stat-item">
+                <strong>Vocabulary Size:</strong> ${results.vocabulary.size.toLocaleString()}
+            </div>
+            <div class="stat-item">
+                <strong>Vector Size:</strong> ${results.vocabulary.actualVectorSize.toLocaleString()}${vectorSizeNote}
+            </div>
+            <div class="stat-item">
+                <strong>Documents Processed:</strong> ${results.processed.length.toLocaleString()}
+            </div>
+            <div class="stat-item">
+                <strong>Methods Applied:</strong> ${this.getMethodsString(results.settings)}
+            </div>
+            ${classDistributionHTML}
+        `;
+        
+        resultsSection.style.display = 'block';
+        resultsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    getMethodsString(settings) {
+        const methods = [];
+        
+        // Normalization
+        if (settings.useStemming) methods.push('Stemming');
+        if (settings.useLemmatization) methods.push('Lemmatization');
+        
+        // Feature Extraction
+        if (settings.useTF) methods.push('TF');
+        if (settings.useTFIDF) methods.push('TF-IDF');
+        if (settings.useWord2Vec) methods.push('Word2Vec');
+        
+        // Class Imbalance Handling
+        if (settings.useSMOTE) methods.push('SMOTE');
+        if (settings.useOversampling) methods.push('Random Oversampling');
+        if (settings.useUndersampling) methods.push('Random Undersampling');
+        
+        return methods.join(', ') || 'None';
+    }
+
+    getClassDistributionHTML(results) {
+        const settings = results.settings;
+        
+        // Only show class distribution if imbalance handling was applied
+        if (!settings.useSMOTE && !settings.useOversampling && !settings.useUndersampling) {
+            return '';
+        }
+        
+        let html = '<div class="stat-item" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">';
+        html += '<strong>Class Distribution:</strong>';
+        html += '</div>';
+        
+        // Check if we have backend-provided class distribution (Word2Vec case)
+        if (results.classDistribution) {
+            // Use backend results
+            const originalDist = results.classDistribution.original;
+            const processedDist = results.classDistribution.processed;
+            
+            // Original distribution
+            html += '<div class="stat-item" style="font-size: 0.9em; padding-left: 10px;">';
+            html += '<span style="color: #666;">Before: </span>';
+            html += Object.entries(originalDist)
+                .map(([label, count]) => `${label}: ${count}`)
+                .join(', ');
+            html += '</div>';
+            
+            // Processed distribution
+            html += '<div class="stat-item" style="font-size: 0.9em; padding-left: 10px;">';
+            html += '<span style="color: #666;">After: </span>';
+            html += Object.entries(processedDist)
+                .map(([label, count]) => `${label}: ${count}`)
+                .join(', ');
+            html += '</div>';
+        } else {
+            // Calculate from frontend data (TF/TF-IDF case)
+            const originalDist = {};
+            results.original.forEach(item => {
+                const label = item.label || 'Unlabeled';
+                originalDist[label] = (originalDist[label] || 0) + 1;
+            });
+            
+            const processedDist = {};
+            results.processed.forEach(item => {
+                const label = item.label || 'Unlabeled';
+                processedDist[label] = (processedDist[label] || 0) + 1;
+            });
+            
+            // Original distribution
+            html += '<div class="stat-item" style="font-size: 0.9em; padding-left: 10px;">';
+            html += '<span style="color: #666;">Before: </span>';
+            html += Object.entries(originalDist)
+                .map(([label, count]) => `${label}: ${count}`)
+                .join(', ');
+            html += '</div>';
+            
+            // Processed distribution
+            html += '<div class="stat-item" style="font-size: 0.9em; padding-left: 10px;">';
+            html += '<span style="color: #666;">After: </span>';
+            html += Object.entries(processedDist)
+                .map(([label, count]) => `${label}: ${count}`)
+                .join(', ');
+            html += '</div>';
+        }
+        
+        return html;
+    }
+
+    resetForm() {
+        // Reset normalization checkboxes
+        document.getElementById('useStemming').checked = false;
+        document.getElementById('useLemmatization').checked = false;
+        
+        // Reset feature extraction checkboxes
+        document.getElementById('useTF').checked = false;
+        document.getElementById('useTFIDF').checked = false;
+        document.getElementById('useWord2Vec').checked = false;
+        
+        // Reset class imbalance checkboxes
+        document.getElementById('useSMOTE').checked = false;
+        document.getElementById('useOversampling').checked = false;
+        document.getElementById('useUndersampling').checked = false;
+        
+        // Reset slider
+        document.getElementById('vectorSize').value = 100;
+        document.getElementById('vectorSizeValue').textContent = '100%';
+        
+        // Hide results
+        document.getElementById('preprocessingResults').style.display = 'none';
+        
+        this.updateVectorInfo();
+    }
+
+    proceedToModeling() {
+        try {
+            // Calculate class distributions for storage
+            const originalDist = {};
+            const processedDist = {};
+            
+            this.processedData.original.forEach(item => {
+                const label = item.label || 'Unlabeled';
+                originalDist[label] = (originalDist[label] || 0) + 1;
+            });
+            
+            this.processedData.processed.forEach(item => {
+                const label = item.label || 'Unlabeled';
+                processedDist[label] = (processedDist[label] || 0) + 1;
+            });
+            
+            // Store only essential data
+            const essentialData = {
+                settings: this.preprocessor.currentSettings,
+                vocabulary: {
+                    size: this.preprocessor.vocabulary.size,
+                    actualVectorSize: this.processedData.vocabulary.actualVectorSize
+                },
+                sample: this.processedData.processed.slice(0, 5), // Store only a sample for display
+                classDistribution: {
+                    original: originalDist,
+                    processed: processedDist
+                }
+            };
+            
+            // Store minimal data to avoid quota issues
+            sessionStorage.setItem("preprocessingSettings", JSON.stringify(essentialData.settings));
+            sessionStorage.setItem("preprocessingInfo", JSON.stringify({
+                vocabularySize: essentialData.vocabulary.size,
+                vectorSize: essentialData.vocabulary.actualVectorSize,
+                methods: this.getMethodsString(essentialData.settings),
+                documentCount: this.processedData.processed.length,
+                classDistribution: essentialData.classDistribution
+            }));
+            
+            console.log("Preprocessing data stored successfully");
+            
+            // Navigate to predictive modeling
+            window.location.href = "/predictive";
+            
+        } catch (error) {
+            console.error("Failed to store preprocessing results:", error);
+            
+            // Fallback: Try to store even less data
+            try {
+                sessionStorage.setItem("preprocessingSettings", JSON.stringify(this.preprocessor.currentSettings));
+                sessionStorage.setItem("preprocessingApplied", "true");
+                window.location.href = "/predictive";
+            } catch (fallbackError) {
+                this.showError("Storage limit exceeded. Clearing some data and trying again...");
+                
+                // Clear some session storage and try again
+                sessionStorage.removeItem("preprocessedData");
+                sessionStorage.setItem("preprocessingApplied", "true");
+                
+                setTimeout(() => {
+                    window.location.href = "/predictive";
+                }, 1000);
+            }
+        }
+    }
+
+    showError(message) {
+        // You can replace this with a more sophisticated notification system
+        alert(`Error: ${message}`);
+    }
+}
+
+
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    window.preprocessingUI = new PreprocessingUI();
+});
