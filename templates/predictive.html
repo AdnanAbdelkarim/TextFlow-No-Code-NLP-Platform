@@ -177,6 +177,20 @@
 
   </div>
 
+  <script src="{{ url_for('static', filename='js/core/debug.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/core/api.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/core/utils.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/core/state.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+  <!-- ADD: Dependencies for predictive.js -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- ADD: Predictive page logic -->
   <script src="{{ url_for('static', filename='js/predictive.js') }}"></script>
+  <footer class="copyright">
+    © 2026 Adnan Abdelkarim, Uzair Ahmad. All rights reserved.
+  </footer>
 </body>
 </html>

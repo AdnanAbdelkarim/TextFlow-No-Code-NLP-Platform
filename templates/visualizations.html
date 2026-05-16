@@ -5,9 +5,6 @@
   <title>Visualizations - Text Analysis Dashboard</title>
 
   <!-- CSS -->
-  <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}"> -->
-  <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/tabs.css') }}"> -->
-  <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/visual.css') }}"> -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/all.css') }}"> 
 
   <!-- Libs: correct order -->
@@ -18,9 +15,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <script src="https://unpkg.com/wordcloud@1.2.2/src/wordcloud2.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.2/wordcloud2.min.js"></script>
-
-  <!-- Your app code LAST -->
-  <script defer src="{{ url_for('static', filename='js/script.js') }}"></script>
 </head>
 <body>
 
@@ -53,21 +47,6 @@
     <button class="subtab-button" data-tab="zipf-tab">Zipf's Law</button>
     <button class="subtab-button" data-tab="label-tab">Label Distribution</button>
   </div>
-
-  <!-- Download + controls -->
-  <div class="subtab-downloads">
-    <div class="download-group" data-tab="wordcloud-tab">
-      <button class="download-button" onclick="downloadSVGAsPNG('wordCloud','wordcloud.png')">
-        🖼️ Download Word Cloud
-      </button>
-    </div>
-    
-    <!-- ✅ FIXED: Coverage uses Canvas, not SVG -->
-    <div class="download-group" data-tab="coverage-tab">
-      <button class="download-button" onclick="downloadCoverageChart()">
-        📈 Download Coverage Plot
-      </button>
-    </div>
     
     <div class="download-group" data-tab="coverage-tab">
       <div style="margin-top:15px;">
@@ -77,19 +56,6 @@
         <input type="number" id="maxRank" value="10000" min="1" style="width:80px;">
         <button onclick="updateCoverageRange()">Update Range</button>
       </div>
-    </div>
-    
-    <div class="download-group" data-tab="zipf-tab">
-      <button class="download-button" onclick="downloadSVGAsPNG('zipfPlot','zipfplot.png')">
-        📊 Download Zipf Plot
-      </button>
-    </div>
-    
-    <!-- ✅ FIXED: Label Distribution uses SVG -->
-    <div class="download-group" data-tab="label-tab">
-      <button class="download-button" onclick="downloadChartAsPNG('labelChart','label-distribution.png')">
-        📊 Download Label Chart
-      </button>
     </div>
     
   </div>
@@ -119,7 +85,40 @@
       <h4>Keyword Co-occurrence Network</h4>
       <!-- Class tabs will be inserted here by JS -->
       <div class="network-flex">
-        <!-- Class tabs content will be inserted here by JS -->
+        <div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-top:1rem;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+            <i class="ti ti-info-circle" style="font-size:15px;color:var(--color-text-tertiary)" aria-hidden="true"></i>
+            <span style="font-size:16px;font-weight:800;color:var(--color-text-secondary);letter-spacing:0.04em;text-transform:uppercase;">How to read this chart</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:center;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="flex-shrink:0;display:flex;align-items:center;justify-content:center;width:36px;padding-top:2px;">
+                <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <circle cx="18" cy="18" r="14" fill="#E6F1FB" stroke="#378ADD" stroke-width="1"/>
+                  <circle cx="18" cy="18" r="7" fill="#378ADD" stroke="#185FA5" stroke-width="0.5"/>
+                  <circle cx="18" cy="18" r="3" fill="#0C447C"/>
+                </svg>
+              </div>
+              <div>
+                <div style="font-size:16px;font-weight:600;color:var(--color-text-primary);margin-bottom:3px;">Node size</div>
+                <div style="font-size:14px;color:var(--color-text-secondary);line-height:1.5;">Reflects how frequently a term appears across the corpus. Larger nodes represent higher-frequency words.</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="flex-shrink:0;display:flex;align-items:center;justify-content:center;width:36px;padding-top:2px;">
+                <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <line x1="4" y1="10" x2="32" y2="10" stroke="#378ADD" stroke-width="5" stroke-linecap="round"/>
+                  <line x1="4" y1="20" x2="32" y2="20" stroke="#378ADD" stroke-width="2.5" stroke-linecap="round"/>
+                  <line x1="4" y1="28" x2="32" y2="28" stroke="#378ADD" stroke-width="1" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div>
+                <div style="font-size:16px;font-weight:600;color:var(--color-text-primary);margin-bottom:3px;">Link thickness</div>
+                <div style="font-size:14px;color:var(--color-text-secondary);line-height:1.5;">Reflects how often two terms co-occur in the same context. Thicker edges indicate stronger co-occurrence.</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -139,6 +138,29 @@
     <div id="classOverlapTabs" class="class-tabs-container" style="display: none;">
       <div class="class-tabs-header">
         <h4>Select Class to Analyze:</h4>
+      </div>
+      <div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:1rem;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <i class="ti ti-info-circle" style="font-size:15px;color:var(--color-text-tertiary)" aria-hidden="true"></i>
+          <span style="font-size:16px;font-weight:800;color:var(--color-text-secondary);letter-spacing:0.04em;text-transform:uppercase;">How to interact with this chart</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+          <div style="flex-shrink:0;padding-top:2px;">
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <div style="width:28px;height:10px;border-radius:2px;background:#378ADD;"></div>
+                <div style="width:28px;height:10px;border-radius:2px;background:#D4537E;"></div>
+              </div>
+              <div style="display:flex;justify-content:center;">
+                <i class="ti ti-hand-click" style="font-size:18px;color:var(--color-text-tertiary)" aria-hidden="true"></i>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:16px;font-weight:600;color:var(--color-text-primary);margin-bottom:3px;">Interactive legend</div>
+            <div style="font-size:14px;color:var(--color-text-secondary);line-height:1.6;">Each coloured marker in the legend corresponds to a class in the dataset. Clicking a marker toggles that class's visibility across both the bar chart and the pie chart — allowing you to isolate or compare specific classes without reloading the data.</div>
+          </div>
+        </div>
       </div>
       <div class="class-tabs" id="classOverlapTabButtons">
         <!-- Dynamic class tabs will be inserted here -->
@@ -188,40 +210,46 @@
     </div>
   </div>
 
+  <!-- Phase 5: foundation -->
+  <script src="{{ url_for('static', filename='js/core/debug.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/core/api.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/core/utils.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/core/state.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/core/sessionCache.js') }}"></script>
+
+  <!-- UI utilities -->
+  <script src="{{ url_for('static', filename='js/ui/forms.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/ui/tabs.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/ui/classification.js') }}"></script>
+
+  <!-- All visualization modules (this page uses everything) -->
+  <script src="{{ url_for('static', filename='js/visualizations/labelDistribution.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/visualizations/pieChart.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/visualizations/wordCloud.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/visualizations/keywordNetwork.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/visualizations/vocabCoverage.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/visualizations/zipf.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/visualizations/classOverlap.js') }}"></script>
+
+  <!-- Page initializer -->
+  <script src="{{ url_for('static', filename='js/pages/visualizations.js') }}"></script>
+
+  <!-- Main script -->
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
   <script>
 
-    // ✅ RESTORE window.lastCSVData from sessionStorage if needed
-    const storedCSVData = sessionStorage.getItem("lastCSVData");
-    if (storedCSVData) {
-      try {
-        window.lastCSVData = JSON.parse(storedCSVData);
-        console.log("✅ Restored window.lastCSVData from sessionStorage:", window.lastCSVData.length, "rows");
-        const uniqueLabels = [...new Set(window.lastCSVData.map(row => String(row.label)))];
-        console.log("✅ Unique labels after restore:", uniqueLabels);
-        
-        // 🔍 TRACE any writes - but DON'T block, just log
-        let _data = window.lastCSVData;
-        Object.defineProperty(window, 'lastCSVData', {
-          get: function() {
-            return _data;
-          },
-          set: function(newValue) {
-            const oldLabels = [...new Set(_data.map(r => r.label || r.class))];
-            const newLabels = newValue ? [...new Set(newValue.map(r => r.label || r.class))] : [];
-            
-            console.warn("⚠️ OVERWRITE ATTEMPT!");
-            console.log("📊 Old:", _data.length, "rows,", oldLabels.length, "labels:", oldLabels);
-            console.log("📊 New:", newValue ? newValue.length : 0, "rows,", newLabels.length, "labels:", newLabels);
-            console.log("📍 Called from:", new Error().stack.split('\n')[3]); // Show calling line
-            
-            _data = newValue; // Allow it, but log it
-          },
-          configurable: true
-        });
-        console.log("🔍 window.lastCSVData now has trace logging");
-      } catch (e) {
-        console.error("Failed to parse lastCSVData from sessionStorage:", e);
+    // Restore window.lastCSVData from sessionStorage if available
+    try {
+      const storedCSVData = sessionStorage.getItem("lastCSVData");
+      if (storedCSVData) {
+        const parsed = JSON.parse(storedCSVData);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          window.lastCSVData = parsed;
+        }
       }
+    } catch (e) {
+      console.error("Failed to restore lastCSVData from sessionStorage:", e);
     }
 
     // Show/hide Class Overlap tab based on binary classification
@@ -232,7 +260,7 @@
         return String(labelValue);
       }))].filter(l => l && l !== "-1");
       
-      console.log("🏷️ Unique labels detected:", uniqueLabels);
+      dbg("🏷️ Unique labels detected:", uniqueLabels);
       
       if (uniqueLabels.length === 2) {
         if (classOverlapTab) classOverlapTab.style.display = 'inline-block';
@@ -260,13 +288,13 @@
 
     function checkIfDataHasLabels() {
       if (window.uploadedText || (window.words && Array.isArray(window.words))) {
-        console.log("📝 Unlabeled data detected - no labels available");
+        dbg("📝 Unlabeled data detected - no labels available");
         return false;
       }
       
       const textInput = document.getElementById("textInput");
       if (textInput && textInput.value.trim()) {
-        console.log("📝 Textarea has content - unlabeled data");
+        dbg("📝 Textarea has content - unlabeled data");
         return false;
       }
       
@@ -312,119 +340,6 @@
       }
     }
 
-    // CRITICAL: Stopwords checkbox listener - KEEP THIS
-    function initializeStopwordsListener() {
-      const stopwordsCheckbox = document.getElementById("includeStopwords");
-      if (!stopwordsCheckbox) return;
-    
-      // Remove any existing listeners to prevent duplicates
-      const newCheckbox = stopwordsCheckbox.cloneNode(true);
-      stopwordsCheckbox.parentNode.replaceChild(newCheckbox, stopwordsCheckbox);
-    
-      newCheckbox.addEventListener("change", function () {
-        const activeSubtab = document.querySelector(".subtab-button.active");
-        const activeTabId = activeSubtab?.dataset.tab;
-        const includeStop = this.checked;
-    
-        console.log(`🔄 Stopwords toggled: ${includeStop}, Active tab: ${activeTabId}`);
-    
-        const hasLabels = checkIfDataHasLabels();
-    
-        if (hasLabels) {
-          let activeClassTab;
-          
-          if (activeTabId === "wordcloud-tab") {
-            activeClassTab = document.querySelector("#wordCloud .class-tab.active");
-          } else if (activeTabId === "network-tab") {
-            activeClassTab = document.querySelector("#networkContainer .class-tab.active");
-          } else if (activeTabId === "coverage-tab") {
-            activeClassTab = document.querySelector("#frequencyChart .class-tab.active");
-          } else if (activeTabId === "zipf-tab") {
-            activeClassTab = document.querySelector("#zipfPlot .class-tab.active");
-          } else if (activeTabId === "classOverlap") {
-            // For class overlap, get the active class tab from its own container
-            activeClassTab = document.querySelector("#classOverlapTabButtons .class-tab-btn.active");
-          }
-    
-          const activeClass = activeClassTab?.dataset.class;
-          
-          if (activeTabId === "classOverlap") {
-            // Handle class overlap specifically
-            console.log("🎯 Re-rendering class overlap with stopwords:", includeStop);
-            if (currentActiveClass) {
-              updateClassOverlapForClass(currentActiveClass);
-            } else {
-              updateClassOverlap();
-            }
-            return; // Early return since we handled class overlap
-          }
-          
-          if (!activeClass) {
-            console.warn("No active class found");
-            return;
-          }
-    
-          let textData;
-          if (activeClass === "all") {
-            textData = window.lastCSVData.map(row => row.text || row.email || "");
-          } else {
-            const classData = window.lastCSVData.filter((row) => {
-              // Convert "label0" → "0" before comparing
-              const targetClassNum = activeClass.replace('label', '');
-              const rowClass = row.class !== undefined ? row.class : row.label;
-              return String(rowClass || "Unlabeled") === targetClassNum;  // "0" === "0" → TRUE!
-            });
-            textData = classData.map((row) => row.text || row.email || "");
-          }
-    
-          if (activeTabId === "wordcloud-tab" && typeof renderWordCloudForClass === "function") {
-            renderWordCloudForClass(window.lastCSVData, activeClass);
-          } else if (activeTabId === "network-tab" && typeof window.fetchAndRenderCooccurrence === "function") {
-            const topN = parseInt(document.getElementById("topKeywordsInput")?.value, 10) || 100;
-            const minCo = parseInt(document.getElementById("minCooccurrenceInput")?.value, 10) || 2;
-            window.fetchAndRenderCooccurrence(textData, includeStop, topN, minCo, activeClass);
-          } else if (activeTabId === "coverage-tab" && typeof renderCoverageForClass === "function") {
-            const minRank = parseInt(document.getElementById("minRank")?.value, 10) || 1;
-            const maxRank = parseInt(document.getElementById("maxRank")?.value, 10) || 10000;
-            renderCoverageForClass(textData, includeStop, minRank, maxRank, activeClass);
-          } else if (activeTabId === "zipf-tab" && typeof renderZipfForClass === "function") {
-            renderZipfForClass(textData, includeStop, activeClass);
-          }
-    
-        } else {
-          const rows = getRowsForCharts();
-          
-          console.log(`📊 Unlabeled data - rows count: ${rows.length}`);
-    
-          if (!rows || rows.length === 0) {
-            console.warn("⚠️ No unlabeled data available");
-            return;
-          }
-    
-          if (activeTabId === "wordcloud-tab" && typeof window.rerender === "function") {
-            console.log("☁️ Re-rendering word cloud for unlabeled data");
-            window.rerender();
-          } else if (activeTabId === "network-tab" && typeof window.fetchAndRenderCooccurrence === "function") {
-            console.log("🕸️ Re-rendering network for unlabeled data");
-            const topN = parseInt(document.getElementById("topKeywordsInput")?.value, 10) || 100;
-            const minCo = parseInt(document.getElementById("minCooccurrenceInput")?.value, 10) || 2;
-            window.fetchAndRenderCooccurrence(rows, includeStop, topN, minCo);
-          } else if (activeTabId === "coverage-tab" && typeof generateCoverageChartServer === "function") {
-            console.log("📈 Re-rendering coverage for unlabeled data");
-            const minRank = parseInt(document.getElementById("minRank")?.value, 10) || 1;
-            const maxRank = parseInt(document.getElementById("maxRank")?.value, 10) || 10000;
-            generateCoverageChartServer(rows, includeStop, minRank, maxRank);
-          } else if (activeTabId === "zipf-tab" && typeof generateZipfPlotServer === "function") {
-            console.log("📊 Re-rendering Zipf for unlabeled data");
-            generateZipfPlotServer(rows, includeStop);
-          } else if (activeTabId === "classOverlap") {
-            console.log("🎯 Cannot analyze class overlap without labels");
-            alert("❌ Class overlap analysis requires labeled data.");
-          }
-        }
-      });
-    }
-
     // CRITICAL: Subtab switching - KEEP THIS but make it conflict-free
     function initializeStopwordsListener() {
       const stopwordsCheckbox = document.getElementById("includeStopwords");
@@ -439,7 +354,7 @@
         const activeTabId = activeSubtab?.dataset.tab;
         const includeStop = this.checked;
     
-        console.log(`🔄 Stopwords toggled: ${includeStop}, Active tab: ${activeTabId}`);
+        dbg(`🔄 Stopwords toggled: ${includeStop}, Active tab: ${activeTabId}`);
     
         const hasLabels = checkIfDataHasLabels();
     
@@ -455,15 +370,15 @@
           } else if (activeTabId === "zipf-tab") {
             activeClassTab = document.querySelector("#zipfPlot .class-tab.active");
           } else if (activeTabId === "classOverlap") {
-            // For class overlap, get the active class tab from its own container
-            activeClassTab = document.querySelector("#classOverlapTabButtons .class-tab-btn.active");
+            // For class overlap, get the active class tab (scoped to its container)
+            activeClassTab = document.querySelector("#classOverlapTabButtons .class-tab.active");
           }
     
           const activeClass = activeClassTab?.dataset.class;
           
           if (activeTabId === "classOverlap") {
             // Handle class overlap specifically
-            console.log("🎯 Re-rendering class overlap with stopwords:", includeStop);
+            dbg("🎯 Re-rendering class overlap with stopwords:", includeStop);
             if (currentActiveClass) {
               updateClassOverlapForClass(currentActiveClass);
             } else {
@@ -495,7 +410,7 @@
             });
             textData = classData.map(row => row.text || row.email || "");
             
-            console.log(`🔍 Stopwords change - Filtering for "${activeClass}":`, {
+            dbg(`🔍 Stopwords change - Filtering for "${activeClass}":`, {
               activeClass,
               targetClassNum,
               totalRows: window.lastCSVData.length,
@@ -506,25 +421,25 @@
     
           // ✅ Clear word cloud cache when stopwords change
           if (activeTabId === "wordcloud-tab" && window.wordCloudCache) {
-            console.log("🧹 Clearing word cloud cache for stopwords change");
+            dbg("🧹 Clearing word cloud cache for stopwords change");
             window.wordCloudCache.clear();
           }
     
           if (activeTabId === "wordcloud-tab" && typeof renderWordCloudForClass === "function") {
-            console.log("☁️ Re-rendering word cloud with new stopwords");
+            dbg("☁️ Re-rendering word cloud with new stopwords");
             renderWordCloudForClass(window.lastCSVData, activeClass);
           } else if (activeTabId === "network-tab" && typeof window.fetchAndRenderCooccurrence === "function") {
             const topN = parseInt(document.getElementById("topKeywordsInput")?.value, 10) || 100;
             const minCo = parseInt(document.getElementById("minCooccurrenceInput")?.value, 10) || 2;
-            console.log("🕸️ Re-rendering network with new stopwords");
+            dbg("🕸️ Re-rendering network with new stopwords");
             window.fetchAndRenderCooccurrence(textData, includeStop, topN, minCo, activeClass);
           } else if (activeTabId === "coverage-tab" && typeof renderCoverageForClass === "function") {
             const minRank = parseInt(document.getElementById("minRank")?.value, 10) || 1;
             const maxRank = parseInt(document.getElementById("maxRank")?.value, 10) || 10000;
-            console.log("📈 Re-rendering coverage with new stopwords");
+            dbg("📈 Re-rendering coverage with new stopwords");
             renderCoverageForClass(textData, includeStop, minRank, maxRank, activeClass);
           } else if (activeTabId === "zipf-tab" && typeof renderZipfForClass === "function") {
-            console.log("📊 Re-rendering Zipf with new stopwords");
+            dbg("📊 Re-rendering Zipf with new stopwords");
             renderZipfForClass(textData, includeStop, activeClass);
           }
     
@@ -532,7 +447,7 @@
           // Unlabeled data path
           const rows = getRowsForCharts();
           
-          console.log(`📊 Unlabeled data - rows count: ${rows.length}`);
+          dbg(`📊 Unlabeled data - rows count: ${rows.length}`);
     
           if (!rows || rows.length === 0) {
             console.warn("⚠️ No unlabeled data available");
@@ -540,90 +455,74 @@
           }
     
           if (activeTabId === "wordcloud-tab" && typeof window.rerender === "function") {
-            console.log("☁️ Re-rendering word cloud for unlabeled data");
+            dbg("☁️ Re-rendering word cloud for unlabeled data");
             window.rerender();
           } else if (activeTabId === "network-tab" && typeof window.fetchAndRenderCooccurrence === "function") {
-            console.log("🕸️ Re-rendering network for unlabeled data");
+            dbg("🕸️ Re-rendering network for unlabeled data");
             const topN = parseInt(document.getElementById("topKeywordsInput")?.value, 10) || 100;
             const minCo = parseInt(document.getElementById("minCooccurrenceInput")?.value, 10) || 2;
             window.fetchAndRenderCooccurrence(rows, includeStop, topN, minCo);
           } else if (activeTabId === "coverage-tab" && typeof generateCoverageChartServer === "function") {
-            console.log("📈 Re-rendering coverage for unlabeled data");
+            dbg("📈 Re-rendering coverage for unlabeled data");
             const minRank = parseInt(document.getElementById("minRank")?.value, 10) || 1;
             const maxRank = parseInt(document.getElementById("maxRank")?.value, 10) || 10000;
             generateCoverageChartServer(rows, includeStop, minRank, maxRank);
           } else if (activeTabId === "zipf-tab" && typeof generateZipfPlotServer === "function") {
-            console.log("📊 Re-rendering Zipf for unlabeled data");
+            dbg("📊 Re-rendering Zipf for unlabeled data");
             generateZipfPlotServer(rows, includeStop);
           } else if (activeTabId === "classOverlap") {
-            console.log("🎯 Cannot analyze class overlap without labels");
+            dbg("🎯 Cannot analyze class overlap without labels");
             alert("❌ Class overlap analysis requires labeled data.");
           }
         }
       });
     }
 
-    // CRITICAL: Network update button - KEEP THIS
+    // Network update button — fires the cooccurrence pipeline for the active class.
+    // Previously this referenced undefined variables (activeClass, activeTabId)
+    // and was throwing ReferenceError on every click — see F60.
     function initializeNetworkButton() {
       const updateBtn = document.getElementById("updateNetworkBtn");
       if (!updateBtn) return;
 
+      // Replace the button to clear any prior listeners (idempotent re-init safe)
       const newBtn = updateBtn.cloneNode(true);
       updateBtn.parentNode.replaceChild(newBtn, updateBtn);
 
       newBtn.addEventListener("click", async () => {
-        console.log("🔍 Update Network button clicked");
-        
-        // Get the CURRENT active network tab
+        // Resolve the currently active network tab; fall back to "all" if none.
         const activeNetworkTab = document.querySelector('#networkContainer .class-tabs .class-tab.active');
-        
-        if (!activeNetworkTab) {
-          console.warn("⚠️ No active network tab found, using 'all' as default");
-          // Fallback to "all" data
-          const rows = getRowsForCharts();
-          const includeStop = !!document.getElementById("includeStopwords")?.checked;
-          const topN = +document.getElementById("topKeywordsInput").value || 100;
-          const minCo = +document.getElementById("minCooccurrenceInput").value || 2;
-          
-          if (typeof window.fetchAndRenderCooccurrence === "function") {
-            await window.fetchAndRenderCooccurrence(rows, includeStop, topN, minCo, "all");
-          }
-          return;
-        }
-        
-        const className = activeNetworkTab.dataset.class;
-        console.log("🔍 Update button - Active network tab class:", className);
-        
-        // Get the correct data for this class
+        const className = (activeNetworkTab && activeNetworkTab.dataset.class) || "all";
+
+        // Read controls
+        const includeStop = !!document.getElementById("includeStopwords")?.checked;
+        const topN  = parseInt(document.getElementById("topKeywordsInput")?.value, 10) || 100;
+        const minCo = parseInt(document.getElementById("minCooccurrenceInput")?.value, 10) || 2;
+
+        // Resolve text rows for this class
         let textData;
-        if (activeClass === "all") {
-          textData = window.lastCSVData.map(row => row.text || row.email || "");
+        if (className === "all" || !window.lastCSVData) {
+          // Use everything available — handles labeled (filterRowsByClass with "all")
+          // and unlabeled (getRowsForCharts) paths uniformly.
+          if (window.lastCSVData && window.lastCSVData.length) {
+            textData = window.lastCSVData.map(r => (r.text || r.email || "").toString()).filter(Boolean);
+          } else {
+            textData = (typeof getRowsForCharts === "function") ? getRowsForCharts() : [];
+          }
         } else {
-          // ✅ FIXED: Extract numeric part from class name before comparing
-          const targetClassNum = activeClass.replace('label', '');
-          const classData = window.lastCSVData.filter((row) => {
-            // Handle multi-label format
-            if (row.labelNames && Array.isArray(row.labelNames)) {
-              return row.labelNames.includes(activeClass);
+          // Filter to the active class — supports both multi-label (labelNames array)
+          // and single-label (label/class field) data shapes.
+          const targetClassNum = String(className).replace('label', '');
+          const classData = window.lastCSVData.filter(row => {
+            if (Array.isArray(row.labelNames) && row.labelNames.length) {
+              return row.labelNames.includes(className);
             }
-            // Handle single label format
-            const rowClass = row.class !== undefined ? row.class : row.label;
-            return String(rowClass || "Unlabeled") === targetClassNum;
+            const rowClass = row.label !== undefined ? row.label : row.class;
+            return String(rowClass == null ? "Unlabeled" : rowClass) === targetClassNum;
           });
-          textData = classData.map((row) => row.text || row.email || "");
+          textData = classData.map(row => (row.text || row.email || "").toString()).filter(Boolean);
         }
 
-        console.log(`🔍 Stopwords change - ${activeTabId}:`, {
-          activeClass,
-          targetClassNum: activeClass !== "all" ? activeClass.replace('label', '') : 'all',
-          filteredRows: textData.length,
-          totalRows: window.lastCSVData.length
-        });
-        
-        const includeStop = !!document.getElementById("includeStopwords")?.checked;
-        const topN = +document.getElementById("topKeywordsInput").value || 100;
-        const minCo = +document.getElementById("minCooccurrenceInput").value || 10;
-        
         if (typeof window.fetchAndRenderCooccurrence === "function") {
           await window.fetchAndRenderCooccurrence(textData, includeStop, topN, minCo, className);
         }
@@ -637,7 +536,7 @@
       if (storedData) {
         try {
           window.lastCSVData = JSON.parse(storedData);
-          console.log("✅ Restored lastCSVData from sessionStorage:", window.lastCSVData.length, "rows");
+          dbg("✅ Restored lastCSVData from sessionStorage:", window.lastCSVData.length, "rows");
           updateLabelDistributionVisibility();
           return;
         } catch (e) {
@@ -650,52 +549,56 @@
     }
 
 
-    function initializeSubtabSwitching() {
-      console.log("🔍 initializeSubtabSwitching called");
-      
+    // Subtab switching with bounded retry — previously polled forever if buttons
+    // were missing (F70). Now retries up to MAX_RETRIES with exponential backoff,
+    // then logs a single error and gives up.
+    function initializeSubtabSwitching(retryCount) {
+      retryCount = retryCount || 0;
+      const MAX_RETRIES = 20; // 20 retries × 100ms base = ~2 seconds max wait
+
       const tabButtons = document.querySelectorAll(".subtab-button");
-      console.log(`🔍 Found ${tabButtons.length} subtab buttons`);
-      
+
       if (tabButtons.length === 0) {
-        console.error("❌ No subtab buttons found! DOM might not be ready.");
-        // Try again in a moment
-        setTimeout(initializeSubtabSwitching, 100);
+        if (retryCount < MAX_RETRIES) {
+          setTimeout(() => initializeSubtabSwitching(retryCount + 1), 100);
+        } else {
+          console.error("initializeSubtabSwitching: no subtab buttons found after " + MAX_RETRIES + " retries; giving up");
+        }
         return;
       }
-      
-      // Remove any existing listeners
+
+      // Replace each button to clear any prior listeners
       tabButtons.forEach(btn => {
         const newBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(newBtn, btn);
       });
-      
-      // Add fresh listeners
+
+      // Attach fresh click listeners
       document.querySelectorAll(".subtab-button").forEach(btn => {
-        btn.addEventListener("click", async () => {
+        btn.addEventListener("click", () => {
           const tabId = btn.dataset.tab;
-          console.log(`🔍 Subtab clicked: ${tabId} at ${Date.now()}`);
-          
-          // Switch tabs immediately
+          if (!tabId) return;
+
+          // Update active state on buttons and content panels
           document.querySelectorAll(".subtab-button").forEach(b => b.classList.remove("active"));
           document.querySelectorAll(".subtab-content").forEach(p => p.classList.remove("active"));
           btn.classList.add("active");
-          document.getElementById(tabId).classList.add("active");
-          
-          console.log(`✅ Tab switched to ${tabId} at ${Date.now()}`);
-          
-          // ADD THIS: Trigger Class Overlap charts when that tab is selected
-          if (tabId === 'classOverlap') {
-            setTimeout(() => updateClassOverlap(), 100);
+
+          const targetPanel = document.getElementById(tabId);
+          if (targetPanel) targetPanel.classList.add("active");
+
+          // Class Overlap is the only subtab that needs an explicit trigger
+          // because its rendering is on-demand, not eager.
+          if (tabId === 'classOverlap' && typeof updateClassOverlap === "function") {
+            setTimeout(updateClassOverlap, 100);
           }
         });
       });
-      
-      console.log("✅ Subtab switching initialized");
     }
 
     // Initialize everything without conflicting with script.js
     function initializeVisualizationsPage() {
-      console.log("🔧 Initializing visualizations page (conflict-free)");
+      dbg("🔧 Initializing visualizations page (conflict-free)");
       
       initializeStopwordsListener();
       initializeSubtabSwitching();
@@ -708,6 +611,11 @@
       document.querySelectorAll(".download-group").forEach(g => {
         g.style.display = (g.dataset.tab === initialTab) ? "inline-block" : "none";
       });
+      
+      // Trigger plot rendering (extracted to pages/visualizations.js as initializeVisualizationsPlots)
+      if (typeof window.initializeVisualizationsPlots === "function") {
+        window.initializeVisualizationsPlots();
+      }
     }
 
     // Wait for DOM but don't conflict with script.js
@@ -717,563 +625,46 @@
       setTimeout(initializeVisualizationsPage, 100);
     }
 
-    // Simple debug function
-    function testSessionStorageData() {
-      console.log("🧪 Testing sessionStorage data retrieval...");
-      const data = getRowsForCharts();
-      console.log("📦 Retrieved data length:", data.length);
-      return data;
-    }
-
-    // Run debug
-    testSessionStorageData();
-
 
     // Update preprocessText to accept includeStopwords parameter
-  function preprocessText(text, includeStopwords = false) {
-    if (!text || typeof text !== 'string') return '';
-    
-    // Convert to lowercase
-    let processed = text.toLowerCase();
-    
-    // Remove special characters and numbers
-    processed = processed.replace(/[^\w\s]|_/g, ' ').replace(/\s+/g, ' ');
-    
-    // Tokenize
-    const tokens = processed.split(/\s+/).filter(token => token.length > 0);
-    
-    // Remove stopwords if needed
-    if (!includeStopwords) {
-      const stopwords = new Set([
-        'a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of',
-        'with', 'by', 'as', 'is', 'was', 'are', 'were', 'be', 'been', 'being',
-        'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'shall', 'should',
-        'can', 'could', 'may', 'might', 'must', 'i', 'me', 'my', 'myself', 'we', 'our',
-        'ours', 'ourselves', 'you', 'your', 'yours', 'yourself', 'yourselves', 'he',
-        'him', 'his', 'himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself',
-        'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who', 'whom',
-        'this', 'that', 'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been',
-        'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'would',
-        'should', 'could', 'ought', 'i\'m', 'you\'re', 'he\'s', 'she\'s', 'it\'s', 'we\'re',
-        'they\'re', 'i\'ve', 'you\'ve', 'we\'ve', 'they\'ve', 'i\'d', 'you\'d', 'he\'d',
-        'she\'d', 'we\'d', 'they\'d', 'i\'ll', 'you\'ll', 'he\'ll', 'she\'ll', 'we\'ll',
-        'they\'ll', 'isn\'t', 'aren\'t', 'wasn\'t', 'weren\'t', 'hasn\'t', 'haven\'t',
-        'hadn\'t', 'doesn\'t', 'don\'t', 'didn\'t', 'won\'t', 'wouldn\'t', 'shan\'t',
-        'shouldn\'t', 'can\'t', 'cannot', 'couldn\'t', 'mustn\'t', 'let\'s', 'that\'s',
-        'who\'s', 'what\'s', 'here\'s', 'there\'s', 'when\'s', 'where\'s', 'why\'s',
-        'how\'s', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until',
-        'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into',
-        'through', 'during', 'before', 'after', 'above', 'below', 'to', 'from', 'up',
-        'down', 'in', 'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then',
-        'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both',
-        'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not',
-        'only', 'own', 'same', 'so', 'than', 'too', 'very'
-      ]);
-      
-      const filteredTokens = tokens.filter(token => !stopwords.has(token));
-      return filteredTokens.join(' ');
-    }
-    
-    return tokens.join(' ');
-  }
-    // =================== MULTI-CLASS OVERLAP ANALYSIS ===================
-    let overlapBarChartInstance = null;
-    let overlapPieChartInstance = null;
-    let currentActiveClass = null;
+  /**
+     * Preprocess text: lowercase, strip punctuation, optionally remove stopwords.
+     * Uses the canonical STOPWORDS Set from core/utils.js — see F65, F66.
+     * Previously rebuilt a 100-entry Set on every call (massive GC pressure
+     * when processing 10k+ rows).
+     *
+     * @param {string} text
+     * @param {boolean} [includeStopwords=false]
+     * @returns {string}
+     */
+     function preprocessText(text, includeStopwords = false) {
+      if (!text || typeof text !== 'string') return '';
 
-    function analyzeMultiClassOverlap(targetClass, minFrequency = 10) {
-      const data = window.lastCSVData;
-      
-      if (!data || !Array.isArray(data) || data.length === 0) {
-          console.error("❌ No data available for class overlap analysis");
-          return null;
+      // Lowercase, strip punctuation and underscores, collapse whitespace
+      let processed = text.toLowerCase().replace(/[^\w\s]|_/g, ' ').replace(/\s+/g, ' ');
+
+      const tokens = processed.split(/\s+/).filter(token => token.length > 0);
+
+      if (includeStopwords) return tokens.join(' ');
+
+      // Use canonical stopwords from core/utils.js (loaded before this script)
+      const stops = window.STOPWORDS || window.stopwords;
+      if (!stops) {
+        // Defensive fallback if utils.js didn't load (shouldn't happen in production)
+        return tokens.join(' ');
       }
-      
-      // Get stopwords checkbox value
-      const stopwordsCheckbox = document.getElementById("includeStopwords");
-      const includeStopwords = stopwordsCheckbox ? stopwordsCheckbox.checked : false;
-      
-      // Extract ALL unique labels
-      const allLabels = new Set();
-      data.forEach(row => {
-          const labelValue = row.label !== undefined ? row.label : row.class;
-          if (labelValue !== undefined && labelValue !== null && labelValue !== "-1") {
-              if (Array.isArray(labelValue)) {
-                  labelValue.forEach(l => allLabels.add(String(l)));
-              } else {
-                  allLabels.add(String(labelValue));
-              }
-          }
-      });
-      
-      const uniqueLabels = [...allLabels].sort();
-      console.log("🏷️ All unique labels:", uniqueLabels);
-      
-      if (uniqueLabels.length < 2) {
-          console.warn(`⚠️ Class overlap requires at least 2 classes, found: ${uniqueLabels.length}`);
-          return null;
+
+      const filtered = [];
+      for (let i = 0; i < tokens.length; i++) {
+        if (!stops.has(tokens[i])) filtered.push(tokens[i]);
       }
-    
-      // Get label names if available
-      const getLabelName = (labelIdx) => {
-          const sampleRow = data.find(row => {
-              const rowLabel = row.label !== undefined ? row.label : row.class;
-              if (Array.isArray(rowLabel)) {
-                  return rowLabel.includes(labelIdx);
-              }
-              return String(rowLabel) === labelIdx;
-          });
-          if (sampleRow && sampleRow.labelNames && sampleRow.labelNames.length > 0) {
-              return sampleRow.labelNames[0]; // Use first name for display
-          }
-          return `Class ${labelIdx}`;
-      };
-    
-      const targetClassName = getLabelName(targetClass);
-      const otherClasses = uniqueLabels.filter(label => label !== targetClass);
-      const otherClassesName = `All Other Classes (${otherClasses.join(', ')})`;
-      
-      console.log(`🔍 Analyzing: "${targetClassName}" vs "${otherClassesName}" (stopwords: ${includeStopwords})`);
-      
-      // Count terms for target class vs all other classes
-      const targetClassTerms = {};
-      const otherClassesTerms = {};
-    
-      data.forEach(item => {
-          const text = item.text || "";
-          const processedText = preprocessText(text, includeStopwords); // Pass includeStopwords here
-          const tokens = processedText.split(/\s+/).filter(t => t.length > 0);
-          
-          const itemLabel = item.label !== undefined ? item.label : item.class;
-          
-          // Check if item belongs to target class
-          const isTargetClass = Array.isArray(itemLabel) 
-              ? itemLabel.includes(targetClass)
-              : String(itemLabel) === targetClass;
-          
-          // Check if item belongs to any other class
-          const isOtherClass = Array.isArray(itemLabel)
-              ? itemLabel.some(l => otherClasses.includes(String(l)))
-              : otherClasses.includes(String(itemLabel));
-          
-          tokens.forEach(token => {
-              if (isTargetClass) {
-                  targetClassTerms[token] = (targetClassTerms[token] || 0) + 1;
-              }
-              if (isOtherClass) {
-                  otherClassesTerms[token] = (otherClassesTerms[token] || 0) + 1;
-              }
-          });
-      });
-    
-      console.log(`📊 ${targetClassName} terms: ${Object.keys(targetClassTerms).length}, Other classes terms: ${Object.keys(otherClassesTerms).length}`);
-    
-      // Filter by minimum frequency
-      const filterTerms = (terms) => {
-          return Object.fromEntries(
-              Object.entries(terms).filter(([_, freq]) => freq >= minFrequency)
-          );
-      };
-    
-      const filteredTargetClass = filterTerms(targetClassTerms);
-      const filteredOtherClasses = filterTerms(otherClassesTerms);
-    
-      // Find overlapping and unique terms
-      const targetKeys = new Set(Object.keys(filteredTargetClass));
-      const otherKeys = new Set(Object.keys(filteredOtherClasses));
-    
-      const overlapTerms = {};
-      const uniqueTarget = {};
-      const uniqueOther = {};
-    
-      targetKeys.forEach(term => {
-          if (otherKeys.has(term)) {
-              overlapTerms[term] = {
-                  target: filteredTargetClass[term],
-                  other: filteredOtherClasses[term],
-                  total: filteredTargetClass[term] + filteredOtherClasses[term]
-              };
-          } else {
-              uniqueTarget[term] = filteredTargetClass[term];
-          }
-      });
-    
-      otherKeys.forEach(term => {
-          if (!targetKeys.has(term)) {
-              uniqueOther[term] = filteredOtherClasses[term];
-          }
-      });
-    
-      console.log(`📊 Results - Unique ${targetClassName}: ${Object.keys(uniqueTarget).length}, ` +
-                  `Unique ${otherClassesName}: ${Object.keys(uniqueOther).length}, ` +
-                  `Overlap: ${Object.keys(overlapTerms).length}`);
-    
-      return {
-          targetClass: targetClassName,
-          otherClasses: otherClassesName,
-          uniqueTarget,
-          uniqueOther,
-          overlapTerms,
-          targetClassTerms: filteredTargetClass,
-          otherClassesTerms: filteredOtherClasses,
-          allClasses: uniqueLabels,
-          includeStopwords: includeStopwords // Include this in the return for debugging
-      };
+      return filtered.join(' ');
     }
 
-    function createMultiClassOverlapBarChart(overlapData) {
-        const canvas = document.getElementById('overlapBarChart');
-        if (!canvas) return;
-
-        // Destroy existing chart
-        if (overlapBarChartInstance) {
-            overlapBarChartInstance.destroy();
-        }
-
-        const ctx = canvas.getContext('2d');
-
-        // Sort and limit terms (top 20 for each category)
-        const sortByFrequency = (obj) => {
-            return Object.entries(obj)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 20);
-        };
-
-        const uniqueTargetSorted = sortByFrequency(overlapData.uniqueTarget);
-        const uniqueOtherSorted = sortByFrequency(overlapData.uniqueOther);
-        const overlapSorted = Object.entries(overlapData.overlapTerms)
-            .sort((a, b) => b[1].total - a[1].total)
-            .slice(0, 20);
-
-        // Prepare labels and data
-        const labels = [
-            ...uniqueTargetSorted.map(([term]) => term),
-            ...overlapSorted.map(([term]) => term),
-            ...uniqueOtherSorted.map(([term]) => term)
-        ];
-
-        const targetData = [
-            ...uniqueTargetSorted.map(([_, freq]) => freq),
-            ...overlapSorted.map(([_, data]) => data.target),
-            ...uniqueOtherSorted.map(() => 0)
-        ];
-
-        const otherData = [
-            ...uniqueTargetSorted.map(() => 0),
-            ...overlapSorted.map(([_, data]) => data.other),
-            ...uniqueOtherSorted.map(([_, freq]) => freq)
-        ];
-
-        overlapBarChartInstance = new Chart(ctx, {
-            type: 'bar',
-            indexAxis: 'y', 
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: overlapData.targetClass,
-                        data: targetData,
-                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1
-                    },
-                    {
-                        label: overlapData.otherClasses,
-                        data: otherData,
-                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: `${overlapData.targetClass} vs ${overlapData.otherClasses}`,
-                        font: { size: 16 }
-                    },
-                    legend: {
-                        display: true,
-                        position: 'top'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            afterLabel: function(context) {
-                                const index = context.dataIndex;
-                                const term = labels[index];
-                                if (overlapData.overlapTerms[term]) {
-                                    return `Total: ${overlapData.overlapTerms[term].total}`;
-                                }
-                                return '';
-                            }
-                        }
-                    }
-                },
-                scales: {
-                  y: {
-                      stacked: true,
-                      title: {
-                          display: true,
-                          text: 'Terms',
-                          color: '#000',
-                          font: {
-                              size: 18,
-                              weight: 'bold'
-                          }
-                      },
-                      ticks: {
-                          autoSkip: false
-                      }
-                  },
-                  x: {
-                      stacked: true,
-                      title: {
-                          display: true,
-                          text: 'Frequency',
-                          color: '#000',
-                          font: {
-                              size: 18,
-                              weight: 'bold'
-                          }
-                      }
-                  }
-              }
-            }
-        });
-    }
-
-    function createMultiClassOverlapPieChart(overlapData) {
-        const canvas = document.getElementById('overlapPieChart');
-        if (!canvas) return;
-
-        // Destroy existing chart
-        if (overlapPieChartInstance) {
-            overlapPieChartInstance.destroy();
-        }
-
-        const ctx = canvas.getContext('2d');
-
-        // Count unique terms in each category
-        const uniqueTargetCount = Object.keys(overlapData.uniqueTarget).length;
-        const uniqueOtherCount = Object.keys(overlapData.uniqueOther).length;
-        const overlapCount = Object.keys(overlapData.overlapTerms).length;
-
-        // Calculate total frequencies
-        const uniqueTargetFreq = Object.values(overlapData.uniqueTarget).reduce((a, b) => a + b, 0);
-        const uniqueOtherFreq = Object.values(overlapData.uniqueOther).reduce((a, b) => a + b, 0);
-        const overlapFreq = Object.values(overlapData.overlapTerms).reduce((a, b) => a + b.total, 0);
-
-        overlapPieChartInstance = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: [
-                    `${overlapData.targetClass} Only (${uniqueTargetCount} terms)`,
-                    `${overlapData.otherClasses} Only (${uniqueOtherCount} terms)`,
-                    `Overlap (${overlapCount} terms)`
-                ],
-                datasets: [{
-                    data: [uniqueTargetFreq, uniqueOtherFreq, overlapFreq],
-                    backgroundColor: [
-                        'rgba(54, 162, 235, 0.7)',
-                        'rgba(255, 99, 132, 0.7)',
-                        'rgba(255, 206, 86, 0.7)'
-                    ],
-                    borderColor: [
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(255, 99, 132, 1)',
-                        'rgba(255, 206, 86, 1)'
-                    ],
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: `Term Distribution: ${overlapData.targetClass} vs Others`,
-                        font: { size: 16 }
-                    },
-                    legend: {
-                        display: true,
-                        position: 'bottom'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.parsed || 0;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = ((value / total) * 100).toFixed(1);
-                                return `${label}: ${value} occurrences (${percentage}%)`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    function createClassOverlapTabs(uniqueLabels) {
-        const tabsContainer = document.getElementById('classOverlapTabs');
-        const tabButtonsContainer = document.getElementById('classOverlapTabButtons');
-        
-        if (!tabsContainer || !tabButtonsContainer) return;
-        
-        // Clear existing tabs
-        tabButtonsContainer.innerHTML = '';
-        
-        // Create a tab for each class
-        uniqueLabels.forEach((label, index) => {
-            const tabBtn = document.createElement('button');
-            tabBtn.className = `class-tab-btn ${index === 0 ? 'active' : ''}`;
-            tabBtn.textContent = `Class ${label}`;
-            tabBtn.dataset.class = label;
-            
-            tabBtn.addEventListener('click', function() {
-                // Remove active class from all tabs
-                document.querySelectorAll('.class-tab-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                
-                // Add active class to clicked tab
-                this.classList.add('active');
-                
-                // Update charts for selected class
-                currentActiveClass = label;
-                updateClassOverlapForClass(label);
-            });
-            
-            tabButtonsContainer.appendChild(tabBtn);
-        });
-        
-        // Show the tabs container
-        tabsContainer.style.display = 'block';
-        
-        // Set first class as active
-        if (uniqueLabels.length > 0) {
-            currentActiveClass = uniqueLabels[0];
-        }
-    }
-
-    function updateClassOverlapForClass(className) {
-        const minFrequency = parseInt(document.getElementById('minFrequency').value) || 10;
-        
-        console.log(`🔄 Updating class overlap for: ${className}`);
-        
-        const overlapData = analyzeMultiClassOverlap(className, minFrequency);
-        
-        if (overlapData) {
-            createMultiClassOverlapBarChart(overlapData);
-            createMultiClassOverlapPieChart(overlapData);
-            
-            // Show success message
-            const successMsg = `Class overlap analysis for ${overlapData.targetClass} complete!\n\n` +
-                              `• ${overlapData.targetClass}: ${Object.keys(overlapData.uniqueTarget).length} unique terms\n` +
-                              `• ${overlapData.otherClasses}: ${Object.keys(overlapData.uniqueOther).length} unique terms\n` +
-                              `• Overlapping: ${Object.keys(overlapData.overlapTerms).length} terms`;
-            console.log("✅ " + successMsg);
-        }
-    }
-
-    function updateClassOverlap() {
-        const minFrequency = parseInt(document.getElementById('minFrequency').value) || 10;
-        
-        console.log("🔄 Updating class overlap analysis...");
-        
-        if (!window.lastCSVData || !Array.isArray(window.lastCSVData) || window.lastCSVData.length === 0) {
-            alert('❌ No data available. Please upload a labeled dataset first.');
-            return;
-        }
-        
-        // Extract ALL unique labels
-        const allLabels = new Set();
-        window.lastCSVData.forEach(row => {
-            const labelValue = row.label !== undefined ? row.label : row.class;
-            if (labelValue !== undefined && labelValue !== null && labelValue !== "-1") {
-                if (Array.isArray(labelValue)) {
-                    labelValue.forEach(l => allLabels.add(String(l)));
-                } else {
-                    allLabels.add(String(labelValue));
-                }
-            }
-        });
-        
-        const uniqueLabels = [...allLabels].sort();
-        const labelCount = uniqueLabels.length;
-        
-        if (labelCount < 2) {
-            let errorMessage = `Class overlap analysis requires at least 2 classes.\n\n`;
-            if (labelCount === 0) {
-                errorMessage = `No class labels found in your dataset. Please upload a labeled dataset.`;
-            } else if (labelCount === 1) {
-                errorMessage += `Your dataset has only 1 class: ${uniqueLabels[0]}\n\n`;
-                errorMessage += `Tip: You need at least 2 different classes for overlap analysis.`;
-            }
-            alert('❌ ' + errorMessage);
-            return;
-        }
-        
-        // Show multi-class notice if more than 2 classes
-        const multiClassNotice = document.getElementById('multiClassNotice');
-        if (multiClassNotice) {
-            multiClassNotice.style.display = labelCount > 2 ? 'block' : 'none';
-        }
-        
-        // Create tabs for multi-class analysis
-        createClassOverlapTabs(uniqueLabels);
-        
-        // Update charts for the first class (or current active class)
-        const classToAnalyze = currentActiveClass || uniqueLabels[0];
-        updateClassOverlapForClass(classToAnalyze);
-    }
-
-    // Initialize when Class Overlap tab is selected
-    document.addEventListener('DOMContentLoaded', function() {
-        const classOverlapTab = document.querySelector('.subtab-button[data-tab="classOverlap"]');
-        if (classOverlapTab) {
-            classOverlapTab.addEventListener('click', function() {
-                setTimeout(() => updateClassOverlap(), 100);
-            });
-        }
-    });
-
-    // Initialize when Class Overlap tab is selected
-    document.querySelectorAll('.tab-button').forEach(button => {
-        button.addEventListener('click', function() {
-            if (this.dataset.tab === 'classOverlap') {
-                setTimeout(() => updateClassOverlap(), 100);
-            }
-        });
-    });
-
-    // In visualizations.html - replace your current initialization code
-    console.log("🚀 Initializing visualizations...");
-
-    function initializeVisualizations() {
-      // Wait for script.js to load and check for the function
-      if (typeof window.initializeClassSpecificPlots === 'function') {
-        console.log("✅ initializeClassSpecificPlots is available");
-        
-        if (window.lastCSVData && window.lastCSVData.length > 0) {
-          console.log("📊 Data available, initializing plots...");
-          window.initializeClassSpecificPlots(window.lastCSVData, "all", "all");
-        } else {
-          console.error("❌ No data available for visualizations");
-        }
-      } else {
-        console.log("⏳ Waiting for initializeClassSpecificPlots to load...");
-        // Try again after a short delay
-        setTimeout(initializeVisualizations, 100);
-      }
-    }
-
-    // Start the initialization
-    initializeVisualizations();
   </script>
+
+  <footer class="copyright">
+    © 2026 Adnan Abdelkarim, Uzair Ahmad. All rights reserved.
+  </footer>
 </body>
 </html>

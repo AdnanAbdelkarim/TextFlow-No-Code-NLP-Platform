@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TextFlow NLP Platform — Workflow Flowchart</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue:         #0066cc;
+  --blue-light:   #e6f0fa;
+  --blue-mid:     #b3d1f0;
+  --blue-border:  #80b3e6;
+
+  --pink:         #c0186a;
+  --pink-light:   #fce8f3;
+  --pink-mid:     #f0a8ce;
+  --pink-border:  #e060a8;
+
+  --text:         #1a2340;
+  --muted:        #5a6a90;
+  --neutral-border: #d0dae8;
+
+  --r: 10px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text);
+  padding: 50px 40px 70px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 52px;
+}
+
+.header .label {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 4px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.header h1 {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: var(--text);
+}
+
+.header h1 span { color: var(--blue); }
+
+.legend {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.legend-item { display: flex; align-items: center; gap: 8px; }
+.legend-dot  { width: 10px; height: 10px; border-radius: 50%; }
+
+.flowchart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.row, .split-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  width: 100%;
+}
+
+.split-row { align-items: flex-start; }
+
+.node {
+  border-radius: var(--r);
+  padding: 18px 20px;
+  min-width: 200px;
+  max-width: 228px;
+  flex-shrink: 0;
+  transition: transform .2s, box-shadow .2s;
+}
+
+.node:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0,102,204,0.13);
+}
+
+.node.blue {
+  background: var(--blue-light);
+  border: 1.5px solid var(--blue-border);
+}
+.node.blue h3 { color: var(--blue); }
+
+.node.pink {
+  background: var(--pink-light);
+  border: 1.5px solid var(--pink-border);
+}
+.node.pink h3 { color: var(--pink); }
+
+.node h3 {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 11px;
+  font-family: 'Space Mono', monospace;
+}
+
+.node ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.node li {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 5px 9px;
+  background: rgba(255,255,255,0.7);
+  border: 1px solid var(--neutral-border);
+  border-radius: 6px;
+  line-height: 1.4;
+}
+
+/* HORIZONTAL ARROW */
+.h-arrow {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  width: 46px;
+}
+
+.h-arrow .line { height: 2px; flex: 1; }
+.h-arrow .head {
+  width: 0; height: 0;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  flex-shrink: 0;
+}
+
+.h-arrow.blue .line { background: var(--blue); }
+.h-arrow.blue .head { border-left: 10px solid var(--blue); }
+.h-arrow.pink .line { background: var(--pink); }
+.h-arrow.pink .head { border-left: 10px solid var(--pink); }
+
+/* VERTICAL ARROW */
+.v-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 44px;
+}
+
+.v-arrow .vline { width: 2px; flex: 1; }
+.v-arrow .vhead {
+  width: 0; height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  flex-shrink: 0;
+}
+
+.v-arrow.blue .vline { background: var(--blue); }
+.v-arrow.blue .vhead { border-top: 10px solid var(--blue); }
+.v-arrow.pink .vline { background: var(--pink); }
+.v-arrow.pink .vhead { border-top: 10px solid var(--pink); }
+
+/* DIVIDER */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 6px 0;
+  width: 100%;
+  max-width: 860px;
+}
+
+.divider .dline {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--pink-border), transparent);
+}
+
+.divider .dlabel {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--pink);
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 4px 12px;
+  border: 1px solid var(--pink-mid);
+  border-radius: 20px;
+  background: var(--pink-light);
+}
+
+/* WIDE NODE */
+.node.wide {
+  min-width: 400px;
+  max-width: 450px;
+}
+
+.models-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.model-group h4 {
+  font-size: 11px;
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  letter-spacing: 0.5px;
+  margin-bottom: 7px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--pink-mid);
+}
+
+.badge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+  background: var(--pink-mid);
+  color: var(--pink);
+  border: 1px solid var(--pink-border);
+  font-family: 'Space Mono', monospace;
+  letter-spacing: 0.5px;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span>TextFlow</span> Platform</h1>
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-dot" style="background:var(--blue)"></div>
+      All data (labeled + unlabeled)
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:var(--pink)"></div>
+      Labeled data only
+    </div>
+  </div>
+</div>
+
+<div class="flowchart">
+
+  <div class="row">
+
+    <div class="node blue">
+      <h3>① Input</h3>
+      <ul>
+        <li>Upload CSV / Word / PDF</li>
+        <li>Paste text directly</li>
+        <li>Submit via raw text URL</li>
+      </ul>
+    </div>
+
+    <div class="h-arrow blue"><div class="line"></div><div class="head"></div></div>
+
+    <div class="node blue">
+      <h3>② Overview</h3>
+      <ul>
+        <li>Total &amp; Unique Words</li>
+        <li>Sentiment Score (AFINN)</li>
+        <li>Vocabulary Analysis Score</li>
+      </ul>
+    </div>
+
+    <div class="h-arrow blue"><div class="line"></div><div class="head"></div></div>
+
+    <div class="node blue">
+      <h3>③ Visualizations</h3>
+      <ul>
+        <li>Word Cloud</li>
+        <li>Keyword Network</li>
+        <li>Vocabulary Coverage Curve</li>
+        <li>Zipf's Law Plot</li>
+        <li>Label Distribution Chart</li>
+        <li>Class Overlap Analysis</li>
+      </ul>
+    </div>
+
+    <div class="h-arrow blue"><div class="line"></div><div class="head"></div></div>
+
+    <div class="node blue">
+      <h3>④ Advanced Analysis</h3>
+      <ul>
+        <li>Sentiment Analysis</li>
+        <li>Named Entity Recognition</li>
+        <li>Topic Modeling (LDA)</li>
+        <li>N-gram Exploration</li>
+        <li>Text Classification Analysis</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="v-arrow blue">
+    <div class="vline"></div>
+    <div class="vhead"></div>
+  </div>
+
+  <div class="divider">
+    <div class="dline"></div>
+    <div class="dlabel">Labeled Data Pipeline</div>
+    <div class="dline"></div>
+  </div>
+
+  <div class="v-arrow pink">
+    <div class="vline"></div>
+    <div class="vhead"></div>
+  </div>
+
+  <div class="split-row">
+
+    <div class="node pink">
+      <div class="badge">LABELED DATA REQUIRED</div>
+      <h3>⑤ Preprocessing</h3>
+      <ul>
+        <li>Feature Extraction: TF / TF-IDF / Word2Vec</li>
+        <li>Text Normalization: Stemming / Lemmatization</li>
+        <li>Class Imbalance: SMOTE / Over / Undersampling</li>
+        <li>Vectorization Parameters</li>
+      </ul>
+    </div>
+
+    <div class="h-arrow pink"><div class="line"></div><div class="head"></div></div>
+
+    <div class="node pink wide">
+      <h3>⑥ Predictive Modeling</h3>
+      <div class="models-grid">
+        <div class="model-group">
+          <h4>Traditional Models</h4>
+          <ul>
+            <li>Gaussian Discriminant Analysis</li>
+            <li>Logistic Regression</li>
+            <li>K-Nearest Neighbors</li>
+            <li>Support Vector Machine</li>
+          </ul>
+        </div>
+        <div class="model-group">
+          <h4>Transformer Models</h4>
+          <ul>
+            <li>BERT-Tiny</li>
+            <li>BERT-Small</li>
+            <li>DistilBERT</li>
+            <li>BERT-base</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

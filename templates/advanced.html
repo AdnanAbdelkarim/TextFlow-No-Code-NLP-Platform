@@ -8,7 +8,7 @@
   <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/advanced.css') }}"> -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/all.css') }}"> 
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-</head>
+  
 <body>
 
   <div class="sticky-header">
@@ -61,8 +61,33 @@
     <div id="classification">[Document type, label, or category]</div>
   </div>
 
+  <!-- Phase 5: foundation -->
+  <script src="{{ url_for('static', filename='js/core/debug.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/core/api.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/core/utils.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/core/state.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/core/sessionCache.js') }}"></script>
 
-<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  <!-- UI utilities -->
+  <script src="{{ url_for('static', filename='js/ui/forms.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/ui/classification.js') }}"></script>
 
+  <!-- Visualizations (pieChart used by topic modeling) -->
+  <script src="{{ url_for('static', filename='js/visualizations/pieChart.js') }}"></script>
+
+  <!-- NLP modules (this page uses all three) -->
+  <script src="{{ url_for('static', filename='js/nlp/ner.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/nlp/sentiment.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/nlp/topicModeling.js') }}"></script>
+
+  <!-- Page initializer -->
+  <script src="{{ url_for('static', filename='js/pages/advanced.js') }}"></script>
+
+  <!-- Main script -->
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+  <footer class="copyright">
+    © 2026 Adnan Abdelkarim, Uzair Ahmad. All rights reserved.
+  </footer>
 </body>
 </html>

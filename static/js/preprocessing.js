@@ -1,3 +1,142 @@
+// ============================================
+// PROFESSIONAL LOADING BAR
+// ============================================
+
+const PREPROC_STEPS = [
+    { label: 'Load data',          sublabel: 'Reading documents',           icon: '📂' },
+    { label: 'Text normalization', sublabel: 'Cleaning tokens',             icon: '🔤' },
+    { label: 'Feature extraction', sublabel: 'Vectorizing',                 icon: '📊' },
+    { label: 'Class balancing',    sublabel: 'Resampling',                  icon: '⚖️' },
+    { label: 'Finalizing',         sublabel: 'Saving to session',           icon: '✅' }
+];
+
+function showLoadingBar(title, methodsLabel = '') {
+    const existing = document.getElementById('preprocOverlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'preprocOverlay';
+    overlay.className = 'preproc-overlay';
+
+    overlay.innerHTML = `
+        <div class="preproc-modal">
+            <div class="preproc-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+                </svg>
+            </div>
+            <div class="preproc-title">${title}</div>
+            <div class="preproc-methods" id="preprocMethods">${methodsLabel}</div>
+
+            <div class="preproc-steps" id="preprocSteps">
+                ${PREPROC_STEPS.map((s, i) => `
+                    <div class="preproc-step" id="preprocStep${i}">
+                        <div class="ps-dot" id="preprocDot${i}">${i + 1}</div>
+                        <div class="ps-text">
+                            <div class="ps-label">${s.label}</div>
+                            <div class="ps-sublabel" id="preprocSub${i}">${s.sublabel}</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <div class="preproc-bar-header">
+                <span class="preproc-bar-step-label" id="preprocBarLabel">Starting...</span>
+                <span class="preproc-bar-pct" id="preprocBarPct">0%</span>
+            </div>
+            <div class="preproc-track">
+                <div class="preproc-fill" id="preprocFill" style="width:0%"></div>
+            </div>
+            <div class="preproc-eta" id="preprocEta">Preparing...</div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('visible'));
+}
+
+function setLoadingStep(stepIndex, sublabelOverride = null) {
+    PREPROC_STEPS.forEach((s, i) => {
+        const stepEl = document.getElementById(`preprocStep${i}`);
+        const dotEl = document.getElementById(`preprocDot${i}`);
+        const subEl = document.getElementById(`preprocSub${i}`);
+        if (!stepEl) return;
+
+        if (i < stepIndex) {
+            stepEl.className = 'preproc-step ps-done';
+            dotEl.className = 'ps-dot dot-done';
+            dotEl.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+        } else if (i === stepIndex) {
+            stepEl.className = 'preproc-step ps-active';
+            dotEl.className = 'ps-dot dot-active';
+            dotEl.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/></svg>`;
+            if (sublabelOverride && subEl) subEl.textContent = sublabelOverride;
+        } else {
+            stepEl.className = 'preproc-step';
+            dotEl.className = 'ps-dot';
+            dotEl.innerHTML = i + 1;
+        }
+    });
+}
+
+function updateLoadingBar(percent, barLabel, eta = '') {
+    const fill = document.getElementById('preprocFill');
+    const pct = document.getElementById('preprocBarPct');
+    const label = document.getElementById('preprocBarLabel');
+    const etaEl = document.getElementById('preprocEta');
+    if (fill) fill.style.width = `${percent}%`;
+    if (pct) pct.textContent = `${Math.round(percent)}%`;
+    if (label) label.textContent = barLabel;
+    if (etaEl) etaEl.textContent = eta;
+}
+
+function hideLoadingBar() {
+    const overlay = document.getElementById('preprocOverlay');
+    if (!overlay) return;
+    overlay.classList.remove('visible');
+    setTimeout(() => overlay.remove(), 300);
+}
+
+function animateProgress(from, to, durationMs, barLabel, eta = '') {
+    return new Promise(resolve => {
+        const steps = 40;
+        const increment = (to - from) / steps;
+        const interval = durationMs / steps;
+        let current = from;
+        let count = 0;
+        updateLoadingBar(current, barLabel, eta);
+        const timer = setInterval(() => {
+            count++;
+            current += increment;
+            updateLoadingBar(Math.min(current, to), barLabel, eta);
+            if (count >= steps) { clearInterval(timer); resolve(); }
+        }, interval);
+    });
+}
+
+// Simulates smooth progress between two values over a duration
+function animateProgress(from, to, durationMs, stepLabel) {
+    return new Promise(resolve => {
+        const steps = 30;
+        const increment = (to - from) / steps;
+        const interval = durationMs / steps;
+        let current = from;
+        let count = 0;
+
+        updateLoadingBar(current, stepLabel);
+
+        const timer = setInterval(() => {
+            count++;
+            current += increment;
+            updateLoadingBar(Math.min(current, to), stepLabel);
+            if (count >= steps) {
+                clearInterval(timer);
+                resolve();
+            }
+        }, interval);
+    });
+}
+
 // preprocessing.js
 class TextPreprocessor {
     constructor() {
@@ -551,13 +690,16 @@ function updateVectorSizeInput(featureMethodId) {
 
 
 // UI Controller
+// UI Controller
 class PreprocessingUI {
     constructor() {
         this.preprocessor = new TextPreprocessor();
+        this.lastResults = null;  // ✅ NEW: Store preprocessing results
         this.initializeEventListeners();
         this.loadVocabularyInfo();
         this.initializeNormalizationVisibility();
     }
+    
     initializeNormalizationVisibility() {
         // Check which feature is initially selected (if any)
         const featureCheckboxes = document.querySelectorAll('input[name="feature"]');
@@ -576,7 +718,7 @@ class PreprocessingUI {
     }
 
     initializeEventListeners() {
-        // Normalization checkboxes (mutually exclusive)
+        // ✅ FUNCTIONALITY #1: Normalization checkboxes (mutually exclusive)
         const normalizationCheckboxes = document.querySelectorAll('input[name="normalization"]');
         normalizationCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', function() {
@@ -588,26 +730,30 @@ class PreprocessingUI {
             });
         });
     
-        // Feature extraction checkboxes (mutually exclusive)
+        // ✅ FUNCTIONALITY #2: Feature extraction checkboxes (mutually exclusive)
+        // ✅ FUNCTIONALITY #3: Show/hide normalization based on feature selection
         const featureCheckboxes = document.querySelectorAll('input[name="feature"]');
         featureCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', function() {
                 if (this.checked) {
+                    // Uncheck other feature checkboxes
                     featureCheckboxes.forEach(other => {
                         if (other !== this) other.checked = false;
                     });
+                    
+                    // Update vector size input (Word2Vec vs TF/TF-IDF)
                     updateVectorSizeInput(this.id);
+                    
+                    // ✅ Show/hide normalization section based on selection
                     toggleTextNormalizationSection(this.id);
                 } else {
+                    // If unchecked, reset to default view
                     updateVectorSizeInput(null);
                 }
-
             });
         });
-
-
     
-        // Class imbalance checkboxes (mutually exclusive)
+        // ✅ FUNCTIONALITY #4: Class imbalance checkboxes (mutually exclusive)
         const imbalanceCheckboxes = document.querySelectorAll('input[name="imbalance"]');
         imbalanceCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', function() {
@@ -619,11 +765,17 @@ class PreprocessingUI {
             });
         });
     
-        // Vector size slider
+        // ✅ Vector size slider
         const vectorSlider = document.getElementById('vectorSize');
         const vectorValue = document.getElementById('vectorSizeValue');
         vectorSlider.addEventListener('input', (e) => {
-            vectorValue.textContent = `${e.target.value}%`;
+            // Check if Word2Vec is selected
+            const isWord2Vec = document.getElementById('useWord2Vec')?.checked;
+            if (isWord2Vec) {
+                vectorValue.textContent = `${e.target.value} dimensions`;
+            } else {
+                vectorValue.textContent = `${e.target.value}%`;
+            }
             this.updateVectorInfo();
         });
     
@@ -662,7 +814,7 @@ class PreprocessingUI {
         const vectorSize = parseInt(vectorSlider.value);
         const vocabSize = this.preprocessor.vocabulary.size;
         
-        // Check if Word2Vec is selected
+        // ✅ FUNCTIONALITY #3: Check if Word2Vec is selected
         const isWord2VecSelected = document.getElementById('useWord2Vec').checked;
         
         if (isWord2VecSelected) {
@@ -683,7 +835,7 @@ class PreprocessingUI {
         try {
             preprocessBtn.disabled = true;
             preprocessBtn.textContent = "⏳ Processing...";
-            
+
             const settings = {
                 useStemming: document.getElementById('useStemming').checked,
                 useLemmatization: document.getElementById('useLemmatization').checked,
@@ -695,42 +847,72 @@ class PreprocessingUI {
                 useOversampling: document.getElementById('useOversampling').checked,
                 useUndersampling: document.getElementById('useUndersampling').checked
             };
-            
+
             // Validate settings
             if (settings.useStemming && settings.useLemmatization) {
                 throw new Error("Please select either Stemming OR Lemmatization, not both");
             }
-            
-            // Validate feature extraction - only one method
-            const featureSelected = [
-                settings.useTF,
-                settings.useTFIDF,
-                settings.useWord2Vec
-            ].filter(Boolean);
-            
+
+            const featureSelected = [settings.useTF, settings.useTFIDF, settings.useWord2Vec].filter(Boolean);
             if (featureSelected.length === 0) {
                 throw new Error("Please select at least one feature extraction method");
             }
-            
             if (featureSelected.length > 1) {
                 throw new Error("Please select ONLY ONE feature extraction method. You currently have " + featureSelected.length + " selected.");
             }
-            
-            // Validate class imbalance - only one method at a time
-            const imbalanceSelected = [
-                settings.useSMOTE, 
-                settings.useOversampling, 
-                settings.useUndersampling
-            ].filter(Boolean);
-            
+
+            const imbalanceSelected = [settings.useSMOTE, settings.useOversampling, settings.useUndersampling].filter(Boolean);
             if (imbalanceSelected.length > 1) {
                 throw new Error("Please select ONLY ONE class imbalance method. You currently have " + imbalanceSelected.length + " selected.");
             }
-            
-            const results = await this.preprocessor.preprocess(settings);
+
+            // Build methods label for subtitle
+            const normMethod = settings.useStemming ? 'Stemming' : settings.useLemmatization ? 'Lemmatization' : 'None';
+            const featureMethod = settings.useWord2Vec ? 'Word2Vec' : settings.useTFIDF ? 'TF-IDF' : 'TF';
+            const balanceMethod = settings.useSMOTE ? 'SMOTE' : settings.useOversampling ? 'Oversampling' : settings.useUndersampling ? 'Undersampling' : null;
+            const methodsLabel = [normMethod !== 'None' ? normMethod : null, featureMethod, balanceMethod]
+                .filter(Boolean).join(' · ');
+
+            showLoadingBar('Applying Preprocessing', methodsLabel);
+
+            // Step 0: Load data
+            setLoadingStep(0, 'Reading from session storage...');
+            await animateProgress(0, 18, 350, 'Loading documents...', 'Estimated time: ~5s');
+
+            // Step 1: Text normalization
+            setLoadingStep(1, `Applying ${normMethod}...`);
+            await animateProgress(18, 38, 450, `${normMethod} in progress...`, 'Estimated time: ~4s');
+
+            // Start real preprocessing
+            const resultsPromise = this.preprocessor.preprocess(settings);
+
+            // Step 2: Feature extraction
+            setLoadingStep(2, `Building ${featureMethod} matrix...`);
+            await animateProgress(38, 62, 500, `Vectorizing with ${featureMethod}...`, 'Estimated time: ~3s');
+
+            // Step 3: Class balancing
+            if (balanceMethod) {
+                setLoadingStep(3, `Running ${balanceMethod}...`);
+                await animateProgress(62, 82, 450, `${balanceMethod} oversampling...`, 'Estimated time: ~2s');
+            } else {
+                setLoadingStep(3, 'No resampling selected');
+                await animateProgress(62, 82, 250, 'Skipping class balancing...', 'Estimated time: ~1s');
+            }
+
+            // Wait for real preprocessing
+            const results = await resultsPromise;
+            this.lastResults = results;
+
+            // Step 4: Finalize
+            setLoadingStep(4, 'Saving results...');
+            await animateProgress(82, 100, 350, 'Finalizing...', 'Almost done!');
+            await new Promise(r => setTimeout(r, 400));
+            hideLoadingBar();
+
             this.displayResults(results);
-            
+
         } catch (error) {
+            hideLoadingBar();
             this.showError(error.message);
         } finally {
             preprocessBtn.disabled = false;
@@ -754,7 +936,7 @@ class PreprocessingUI {
         // Calculate class distributions
         const classDistributionHTML = this.getClassDistributionHTML(results);
         
-        // Check if Word2Vec is being used
+        // ✅ FUNCTIONALITY #3: Check if Word2Vec is being used
         const isWord2Vec = results.settings.useWord2Vec;
         const vectorSizeNote = isWord2Vec ? ' (Word2Vec dimensions)' : '';
         
@@ -881,9 +1063,22 @@ class PreprocessingUI {
         document.getElementById('useOversampling').checked = false;
         document.getElementById('useUndersampling').checked = false;
         
-        // Reset slider
-        document.getElementById('vectorSize').value = 100;
+        // Reset slider to default
+        const vectorSlider = document.getElementById('vectorSize');
+        vectorSlider.value = 100;
+        vectorSlider.min = "10";
+        vectorSlider.max = "100";
         document.getElementById('vectorSizeValue').textContent = '100%';
+        
+        // Show normalization section (reset to TF/TF-IDF default)
+        const normalizationSection = document.querySelector('.control-section');
+        if (normalizationSection) {
+            normalizationSection.style.display = 'block';
+        }
+        
+        // Show vocabulary info
+        const vocabInfo = document.querySelector('.vector-info');
+        if (vocabInfo) vocabInfo.style.display = 'block';
         
         // Hide results
         document.getElementById('preprocessingResults').style.display = 'none';
@@ -891,18 +1086,32 @@ class PreprocessingUI {
         this.updateVectorInfo();
     }
 
-    proceedToModeling() {
+    async proceedToModeling() {
         try {
+            // ✅ FIX: Check if results exist
+            if (!this.lastResults) {
+                this.showError("Please run preprocessing first before proceeding to modeling");
+                return;
+            }
+
+            // Build methods label
+            const savedSettings = this.preprocessor.currentSettings;
+            const methodsStr = this.getMethodsString(savedSettings);
+            showLoadingBar('Preparing for Modeling', methodsStr);
+
+            setLoadingStep(0, 'Validating results...');
+            await animateProgress(0, 25, 300, 'Checking preprocessing output...', '~2s');
+            
             // Calculate class distributions for storage
             const originalDist = {};
             const processedDist = {};
             
-            this.processedData.original.forEach(item => {
+            this.lastResults.original.forEach(item => {
                 const label = item.label || 'Unlabeled';
                 originalDist[label] = (originalDist[label] || 0) + 1;
             });
             
-            this.processedData.processed.forEach(item => {
+            this.lastResults.processed.forEach(item => {
                 const label = item.label || 'Unlabeled';
                 processedDist[label] = (processedDist[label] || 0) + 1;
             });
@@ -912,27 +1121,29 @@ class PreprocessingUI {
                 settings: this.preprocessor.currentSettings,
                 vocabulary: {
                     size: this.preprocessor.vocabulary.size,
-                    actualVectorSize: this.processedData.vocabulary.actualVectorSize
+                    actualVectorSize: this.lastResults.vocabulary.actualVectorSize
                 },
-                sample: this.processedData.processed.slice(0, 5), // Store only a sample for display
+                sample: this.lastResults.processed.slice(0, 5),
                 classDistribution: {
                     original: originalDist,
                     processed: processedDist
                 }
             };
             
-            // Store minimal data to avoid quota issues
             sessionStorage.setItem("preprocessingSettings", JSON.stringify(essentialData.settings));
             sessionStorage.setItem("preprocessingInfo", JSON.stringify({
                 vocabularySize: essentialData.vocabulary.size,
                 vectorSize: essentialData.vocabulary.actualVectorSize,
                 methods: this.getMethodsString(essentialData.settings),
-                documentCount: this.processedData.processed.length,
+                documentCount: this.lastResults.processed.length,
                 classDistribution: essentialData.classDistribution
             }));
-            
+
+            // ✅ FIX: Set the flag that runSelectedModels() checks
+            sessionStorage.setItem("preprocessingApplied", "true");
+
             console.log("Preprocessing data stored successfully");
-            
+
             // Navigate to predictive modeling
             window.location.href = "/predictive";
             
@@ -959,12 +1170,9 @@ class PreprocessingUI {
     }
 
     showError(message) {
-        // You can replace this with a more sophisticated notification system
         alert(`Error: ${message}`);
     }
 }
-
-
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {

@@ -5,6 +5,120 @@
   <title>Pre-Processing</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/all.css') }}"> 
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="{{ url_for('static', filename='js/preprocessing.js') }}"></script>
+  <style>
+    .preproc-overlay{
+        position:fixed;inset:0;
+        background:rgba(0,0,0,0.45);
+        display:flex;align-items:center;justify-content:center;
+        z-index:9999;
+        opacity:0;pointer-events:none;
+        transition:opacity 0.25s ease;
+    }
+    .preproc-overlay.visible{opacity:1;pointer-events:all;}
+    
+    .preproc-modal{
+        background:var(--color-background-primary, #fff);
+        border-radius:16px;
+        padding:2.25rem 2.25rem 1.75rem;
+        width:440px;max-width:90vw;
+        border:0.5px solid rgba(0,0,0,0.1);
+    }
+    
+    .preproc-icon{
+        width:48px;height:48px;border-radius:12px;
+        background:#E6F1FB;
+        display:flex;align-items:center;justify-content:center;
+        margin:0 auto 1.25rem;
+    }
+    
+    .preproc-title{
+        font-size:17px;font-weight:600;
+        color:#0f172a;
+        text-align:center;margin-bottom:4px;
+    }
+    
+    .preproc-methods{
+        font-size:12.5px;color:#64748b;
+        text-align:center;margin-bottom:1.75rem;
+        letter-spacing:0.01em;
+    }
+    
+    .preproc-steps{
+        display:flex;flex-direction:column;
+        gap:8px;margin-bottom:1.75rem;
+    }
+    
+    .preproc-step{
+        display:flex;align-items:center;gap:12px;
+        padding:10px 14px;
+        border-radius:10px;
+        background:#f8fafc;
+        border:0.5px solid #e2e8f0;
+        transition:background 0.3s,border-color 0.3s;
+    }
+    
+    .preproc-step.ps-active{
+        background:#EFF6FF;
+        border-color:#BFDBFE;
+    }
+    
+    .preproc-step.ps-done{
+        opacity:0.55;
+    }
+    
+    .ps-dot{
+        width:26px;height:26px;border-radius:50%;
+        display:flex;align-items:center;justify-content:center;
+        flex-shrink:0;font-size:11px;font-weight:600;
+        border:0.5px solid #e2e8f0;
+        background:#f1f5f9;color:#94a3b8;
+        transition:all 0.3s;
+    }
+    
+    .ps-dot.dot-active{
+        background:#2563EB;color:#fff;border-color:#2563EB;
+    }
+    
+    .ps-dot.dot-done{
+        background:#EFF6FF;color:#2563EB;border-color:#BFDBFE;
+    }
+    
+    @keyframes ps-pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+    .dot-active{animation:ps-pulse 1.5s ease-in-out infinite;}
+    
+    .ps-text{}
+    .ps-label{
+        font-size:13px;font-weight:500;color:#1e293b;
+    }
+    .preproc-step.ps-active .ps-label{color:#1d4ed8;}
+    .ps-sublabel{
+        font-size:11px;color:#94a3b8;margin-top:2px;
+    }
+    .preproc-step.ps-active .ps-sublabel{color:#3b82f6;}
+    
+    .preproc-bar-header{
+        display:flex;justify-content:space-between;
+        margin-bottom:8px;
+    }
+    .preproc-bar-step-label{font-size:12px;color:#64748b;}
+    .preproc-bar-pct{font-size:13px;font-weight:600;color:#2563EB;}
+    
+    .preproc-track{
+        height:6px;background:#f1f5f9;
+        border-radius:999px;overflow:hidden;
+        border:0.5px solid #e2e8f0;
+    }
+    .preproc-fill{
+        height:100%;border-radius:999px;
+        background:#2563EB;
+        transition:width 0.12s linear;
+    }
+    .preproc-eta{
+        font-size:11px;color:#94a3b8;
+        text-align:right;margin-top:6px;
+    }
+    </style>
 </head>
 <body>
   <div class="sticky-header">
@@ -110,7 +224,7 @@
       <!-- Action Buttons -->
       <div class="action-buttons">
         <button id="preprocessBtn" class="styled-button primary">Apply Pre-Processing</button>
-        <button id="resetBtn" class="styled-button secondary">🔄 Reset</button>
+        <button id="resetBtn" class="styled-button secondary">Reset</button>
       </div>
 
       <!-- Results Display -->
@@ -131,12 +245,13 @@
           </div>
         </div>
         <div class="proceed-section">
-          <button id="proceedToModeling" class="styled-button success">➡️ Proceed to Predictive Modeling</button>
+          <button id="proceedToModeling" class="styled-button success">Proceed to Predictive Modeling</button>
         </div>
       </div>
     </div>
   </div>
-
-  <script src="{{ url_for('static', filename='js/preprocessing.js') }}"></script>
+  <footer class="copyright">
+    © 2026 Adnan Abdelkarim, Uzair Ahmad. All rights reserved.
+  </footer>
 </body>
 </html>

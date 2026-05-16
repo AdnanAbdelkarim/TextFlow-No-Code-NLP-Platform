@@ -3,10 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>Overview - Text Analysis Dashboard</title>
-  <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}"> -->
-  <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/tabs.css') }}"> -->
-  <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/overview.css') }}"> -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/all.css') }}"> 
+
 </head>
 <body>
 
@@ -37,7 +35,25 @@
   </div>
 
 
+<!-- Phase 5: foundation -->
+<script src="{{ url_for('static', filename='js/core/debug.js') }}"></script>
+<script src="{{ url_for('static', filename='js/core/api.js') }}"></script>
+<script src="{{ url_for('static', filename='js/core/utils.js') }}"></script>
+<script src="{{ url_for('static', filename='js/core/state.js') }}"></script>
+<script src="{{ url_for('static', filename='js/core/sessionCache.js') }}"></script>
 
+<!-- UI utilities -->
+<script src="{{ url_for('static', filename='js/ui/forms.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ui/tabs.js') }}"></script>
+
+<!-- Page initializer -->
+<script src="{{ url_for('static', filename='js/pages/overview.js') }}"></script>
+
+<!-- Main script -->
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+<footer class="copyright">
+  © 2026 Adnan Abdelkarim, Uzair Ahmad. All rights reserved.
+</footer>
 </body>
 </html>

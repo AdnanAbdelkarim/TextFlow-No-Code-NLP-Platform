@@ -234,7 +234,7 @@ async function runSelectedModels() {
   
   try {
     runBtn.disabled = true;
-    runBtn.innerHTML = '<span class="button-icon">⏳</span> Running Models...';
+    runBtn.innerHTML = '<span class="button-icon"></span> Running Models...';
     
     // Check if preprocessing has been applied
     const preprocessingApplied = sessionStorage.getItem("preprocessingApplied");
@@ -481,26 +481,37 @@ async function loadOriginalData() {
         
         // Process multi-label format - create separate entries for EACH active label
         const processed = [];
+        // ✅ FIX: Track unique texts to prevent duplication
+        const seenTexts = new Set();
+        
         multiLabelData.forEach(row => {
           if (row.text && row.labelNames && Array.isArray(row.labelNames) && row.labelNames.length > 0) {
-            // ✅ For multi-label data, create separate entries for EACH label
-            row.labelNames.forEach(label => {
+            const text = row.text.toString().trim();
+            
+            // ✅ FIX: Only use first label for each unique text
+            if (!seenTexts.has(text)) {
+              seenTexts.add(text);
               processed.push({
-                text: row.text.toString().trim(),
-                label: label.toString().trim()
+                text: text,
+                label: row.labelNames[0].toString().trim()  // ← Use first label only
               });
-            });
+            }
           } else if (row.text && row.label && row.label !== "-1") {
-            // Fallback to single label (but not the "-1" placeholder)
-            processed.push({
-              text: row.text.toString().trim(),
-              label: row.label.toString().trim()
-            });
+            const text = row.text.toString().trim();
+            
+            // Also check for duplicates in single-label case
+            if (!seenTexts.has(text)) {
+              seenTexts.add(text);
+              processed.push({
+                text: text,
+                label: row.label.toString().trim()
+              });
+            }
           }
         });
         
         const filtered = processed.filter(row => row.text && row.label);
-        console.log(`✅ Multi-label data: ${filtered.length} total entries`);
+        console.log(`✅ Multi-label data deduplicated: ${filtered.length} unique documents`);
         
         // Debug: Show all unique labels found
         const uniqueLabels = [...new Set(filtered.map(row => row.label))];
@@ -991,8 +1002,14 @@ function renderIndividualROCChart(canvas, model) {
   const auc = calculateAUC(result);
   const modelName = getModelName(model);
   const points = calculateROCPoints(result);
-  
-  new Chart(ctx, {
+
+  if (window[`rocChart_${model}`] && typeof window[`rocChart_${model}`].destroy === 'function') {
+    window[`rocChart_${model}`].destroy();
+    window[`rocChart_${model}`] = null;
+  }
+
+  // ✅ FIX: Store chart instance on window
+  window[`rocChart_${model}`] = new Chart(ctx, {
       type: 'scatter',
       data: {
           datasets: [{
@@ -1163,14 +1180,17 @@ function sortLabels(labels) {
   });
 }
 
-function buildConfusionMatrix(actual, predicted, labels) {    
-  const index = label => labels.indexOf(label);
+function buildConfusionMatrix(actual, predicted, labels) {
+  // ✅ FIX: Use Map for O(1) lookups instead of O(n) indexOf
+  const indexMap = new Map(labels.map((label, idx) => [label, idx]));
   const matrix = Array.from({ length: labels.length }, () => Array(labels.length).fill(0));
 
   actual.forEach((a, i) => {
-    const ai = index(a);
-    const pi = index(predicted[i]);
-    matrix[ai][pi]++;
+    const ai = indexMap.get(a);
+    const pi = indexMap.get(predicted[i]);
+    if (ai !== undefined && pi !== undefined) {
+      matrix[ai][pi]++;
+    }
   });
 
   return matrix;
@@ -1596,69 +1616,60 @@ function calculateROCPoints(result) {
     return [{x: 0, y: 0}, {x: 1, y: 1}];
   }
 
-  // Use actual probability scores if available, otherwise simulate better
+  // ✅ FIX: Use backend-provided probabilities
   let scores;
   if (result.y_prob && Array.isArray(result.y_prob)) {
-    console.log('Using provided y_prob');
+    console.log('✅ Using provided y_prob from backend');
     scores = result.y_prob;
   } else {
-    console.log('Simulating probability scores');
-    // Better simulation: create varied scores that reflect prediction confidence
+    console.warn('⚠️ WARNING: No y_prob provided by backend. ROC curve will be simulated (INACCURATE).');
+    console.warn('⚠️ Backend must return predict_proba() results for accurate ROC curves.');
+    // Simulation fallback
     scores = result.y_pred.map((pred, i) => {
       const isCorrect = pred === result.y_true[i];
-      if (isCorrect) {
-        return 0.7 + Math.random() * 0.3; // 0.7-1.0 for correct predictions
-      } else {
-        return 0.0 + Math.random() * 0.3; // 0.0-0.3 for incorrect predictions
-      }
+      return isCorrect ? 0.8 + Math.random() * 0.2 : Math.random() * 0.2;
     });
   }
 
   console.log('Score range:', Math.min(...scores), 'to', Math.max(...scores));
 
-  // Generate more thresholds for smoother curves
-  const thresholds = [];
-  for (let i = 1.5; i >= -0.5; i -= 0.1) {
-    thresholds.push(i);
+  // ✅ FIX: Vectorized ROC calculation (O(n log n) instead of O(t×n))
+  const y_true_binary = result.y_true.map(label => label === "1" ? 1 : 0);
+  
+  // Sort samples by score (descending)
+  const sortedIndices = scores
+    .map((score, idx) => ({ score, idx }))
+    .sort((a, b) => b.score - a.score)
+    .map(item => item.idx);
+  
+  const points = [{x: 0, y: 0}];  // Start at origin
+  
+  let tp = 0, fp = 0;
+  const totalPositives = y_true_binary.reduce((sum, val) => sum + val, 0);
+  const totalNegatives = y_true_binary.length - totalPositives;
+  
+  // Single pass through sorted samples
+  sortedIndices.forEach(idx => {
+    if (y_true_binary[idx] === 1) {
+      tp++;
+    } else {
+      fp++;
+    }
+    
+    const tpr = totalPositives > 0 ? tp / totalPositives : 0;
+    const fpr = totalNegatives > 0 ? fp / totalNegatives : 0;
+    points.push({x: fpr, y: tpr});
+  });
+  
+  // Remove consecutive duplicate points
+  const uniquePoints = [points[0]];
+  for (let i = 1; i < points.length; i++) {
+    const prev = uniquePoints[uniquePoints.length - 1];
+    const curr = points[i];
+    if (curr.x !== prev.x || curr.y !== prev.y) {
+      uniquePoints.push(curr);
+    }
   }
-
-  const points = [];
-  
-  thresholds.forEach(threshold => {
-    let tp = 0, fp = 0, tn = 0, fn = 0;
-    
-    for (let i = 0; i < result.y_true.length; i++) {
-      const actual = result.y_true[i];
-      const predicted = scores[i] >= threshold ? "1" : "0";
-      
-      if (actual === "1" && predicted === "1") tp++;
-      else if (actual === "0" && predicted === "1") fp++;
-      else if (actual === "0" && predicted === "0") tn++;
-      else if (actual === "1" && predicted === "0") fn++;
-    }
-    
-    const fpr = (fp + tn) > 0 ? fp / (fp + tn) : 0;
-    const tpr = (tp + fn) > 0 ? tp / (tp + fn) : 0;
-    
-    points.push({x: fpr, y: tpr, threshold: threshold});
-  });
-
-  // Ensure we have the endpoints
-  points.push({x: 0, y: 0, threshold: 2.0});
-  points.push({x: 1, y: 1, threshold: -1.0});
-
-  // Sort by FPR and remove exact duplicates
-  const sortedPoints = points.sort((a, b) => a.x - b.x);
-  const uniquePoints = [];
-  const seen = new Set();
-  
-  sortedPoints.forEach(point => {
-    const key = `${point.x.toFixed(3)}_${point.y.toFixed(3)}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      uniquePoints.push({x: point.x, y: point.y});
-    }
-  });
 
   console.log('Generated', uniquePoints.length, 'ROC points');
   return uniquePoints;
@@ -1743,8 +1754,9 @@ function expandSection(sectionName) {
     setTimeout(() => {
       document.querySelectorAll('canvas[id^="rocChart_"]').forEach(canvas => {
         const chartId = canvas.id.replace('rocChart_', '');
-        if (window[`rocChart_${chartId}`]) {
-          window[`rocChart_${chartId}`].resize();
+        const chart = window[`rocChart_${chartId}`];
+        if (chart && typeof chart.resize === 'function') {
+          chart.resize();
         }
       });
     }, 400);
@@ -1754,6 +1766,25 @@ function expandSection(sectionName) {
 // Initialize first tab as active
 document.addEventListener('DOMContentLoaded', function() {
   expandSection('accuracy');
+  
+  // ✅ FIX: Attach button listener directly here as fallback
+  const runBtn = document.getElementById("runModel");
+  if (runBtn) {
+    runBtn.addEventListener("click", async function() {
+      await runSelectedModels();
+    });
+  }
+
+  // ✅ FIX: Attach test size slider listener directly here
+  const testSizeSlider = document.getElementById('testSize');
+  const testSizeValue = document.getElementById('testSizeValue');
+  if (testSizeSlider && testSizeValue) {
+    testSizeSlider.addEventListener('input', function(e) {
+      testSizeValue.textContent = `${e.target.value}%`;
+    });
+    // Set initial display value
+    testSizeValue.textContent = `${testSizeSlider.value}%`;
+  }
 });
 
 // ===== UI HELPER FUNCTIONS =====
@@ -1792,8 +1823,9 @@ function toggleSubsection(headerElement) {
     if (canvas && canvas.id) {
       setTimeout(() => {
         const model = canvas.id.replace('rocChart_', '');
-        if (window[`rocChart_${model}`]) {
-          window[`rocChart_${model}`].resize();
+        const chart = window[`rocChart_${model}`];
+        if (chart && typeof chart.resize === 'function') {
+          chart.resize();
         }
       }, 400);
     }
